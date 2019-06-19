@@ -22,6 +22,7 @@
 #include <iostream>
 #include <memory>
 #include <string>
+#include <unordered_map>
 #include "Output.h"
 #include "helpers.h"
 #include "impacts/Flooding.h"
@@ -56,11 +57,33 @@ static void run(const settings::SettingsNode& settings) {
         } else {
             throw std::runtime_error("Unknown impact type '" + type + "'");
         }
-        // TODO iterate over variables
-        impact->join(output, [&](const std::string& key) {
-            (void)key;  // TODO
-            return "";
-        });
+        std::unordered_map<std::string, std::tuple<int, int, int>> variables;
+        if (impact_node.has("variables")) {
+            for (const auto& var : impact_node["variables"].as_map()) {
+                const auto min_value = var.second["from"].as<int>();
+                const auto max_value = var.second["to"].as<int>();
+                if (min_value > max_value) {
+                    throw std::runtime_error(var.first + ": 'from' value should be less than 'to' value");
+                }
+                variables[var.first] = std::make_tuple(min_value, min_value, max_value);
+            }
+        }
+        bool loop = true;
+        while (loop) {
+            impact->join(output, [&](const std::string& key) -> std::string { return std::to_string(std::get<0>(variables.at(key))); });
+            loop = false;
+            for (auto& var : variables) {
+                auto& current_value = std::get<0>(var.second);
+                const auto max_value = std::get<2>(var.second);
+                if (current_value < max_value) {
+                    ++current_value;
+                    loop = true;
+                    break;
+                }
+                const auto min_value = std::get<1>(var.second);
+                current_value = min_value;
+            }
+        }
     }
     output.close();
 }
