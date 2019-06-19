@@ -369,4 +369,22 @@ inline std::string SettingsNode::as_inner<std::string>() const {
 
 }  // namespace settings
 
+template<>
+struct std::iterator_traits<settings::SettingsNode::Map::iterator> {
+    using value_type = std::pair<std::string, settings::SettingsNode>;
+    using difference_type = void;
+    using pointer = void;
+    using reference = std::pair<std::string, settings::SettingsNode>;
+    using iterator_category = std::forward_iterator_tag;
+};
+
+template<>
+struct std::iterator_traits<settings::SettingsNode::Sequence::iterator> {
+    using value_type = settings::SettingsNode;
+    using difference_type = void;
+    using pointer = void;
+    using reference = settings::SettingsNode;
+    using iterator_category = std::forward_iterator_tag;
+};
+
 #endif
