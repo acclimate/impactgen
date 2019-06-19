@@ -54,6 +54,20 @@ Output::Output(const settings::SettingsNode& settings) {
         case settings::hstring::hash("add"):
             combination = ForcingCombination::ADD;
             break;
+        case settings::hstring::hash("maximum"):
+        case settings::hstring::hash("max"):
+            combination = ForcingCombination::MAX;
+            break;
+        case settings::hstring::hash("minimum"):
+        case settings::hstring::hash("min"):
+            combination = ForcingCombination::MIN;
+            break;
+        case settings::hstring::hash("multiplication"):
+        case settings::hstring::hash("mult"):
+            combination = ForcingCombination::MULT;
+            break;
+        default:
+            throw std::runtime_error("Unknown combination type '" + std::string(combo) + "'");
     }
 }
 
@@ -135,7 +149,7 @@ void Output::close() {
         var_region.putVar(&regions_chars[0]);
     }
 
-    const auto var_agent_forcing = file.addVar("forcing", netCDF::NcType::nc_FLOAT, {dim_time, dim_sector, dim_region});
+    const auto var_agent_forcing = file.addVar("agent_forcing", netCDF::NcType::nc_FLOAT, {dim_time, dim_sector, dim_region});
     for (std::size_t t = 0; t < time_variable.times.size(); ++t) {
         var_agent_forcing.putVar({t, 0, 0}, {1, sectors.size(), regions.size()}, &agent_forcing->get_forcing(time_variable.times[t]).get_data()[0]);
     }

@@ -59,11 +59,24 @@ void AgentForcing::include(const AgentForcing& other, ForcingCombination combina
     switch (combination) {
         case ForcingCombination::ADD:
             for (std::size_t i = 0; i < data.size(); ++i) {
-                data[i] = std::min(data[i] + other.data[i], ForcingType(1.0));
+                data[i] = std::max(data[i] + other.data[i] - 1, ForcingType(0.0));
             }
             break;
-        default:
-            throw std::runtime_error("Combination not supported yet");
+        case ForcingCombination::MAX:
+            for (std::size_t i = 0; i < data.size(); ++i) {
+                data[i] = std::max(data[i], other.data[i]);
+            }
+            break;
+        case ForcingCombination::MIN:
+            for (std::size_t i = 0; i < data.size(); ++i) {
+                data[i] = std::min(data[i], other.data[i]);
+            }
+            break;
+        case ForcingCombination::MULT:
+            for (std::size_t i = 0; i < data.size(); ++i) {
+                data[i] = data[i] * other.data[i];
+            }
+            break;
     }
 }
 

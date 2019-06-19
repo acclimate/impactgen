@@ -27,7 +27,7 @@
 
 namespace impactgen {
 
-enum class ForcingCombination { ADD, MAX, MULT, CONV };
+enum class ForcingCombination { ADD, MAX, MIN, MULT };
 
 using ForcingType = float;
 

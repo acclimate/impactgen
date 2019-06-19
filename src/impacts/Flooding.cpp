@@ -181,7 +181,6 @@ void Flooding::join(Output& output, const std::function<std::string(const std::s
     progressbar::ProgressBar time_bar(time_variable.times.size(), filename);
     std::vector<ForcingType> region_forcing(regions.size());
     for (std::size_t t = 0; t < time_variable.times.size(); ++t) {
-        // forcing_variable.getVar({t, 0, 0}, {1, forcing_grid.y_size(), forcing_grid.x_size()}, &current.data()[0]);
         if (chunk_pos == chunk_size) {
             forcing_variable.getVar(
                 {t, 0, 0},
@@ -202,7 +201,7 @@ void Flooding::join(Output& output, const std::function<std::string(const std::s
                                       rec = 0;
                                   }
                                   const auto v = std::min(forcing_v + rec, ForcingType(1.0));
-                                  region_forcing[i] += v * proxy_value;
+                                  region_forcing[i] += (1 - v) * proxy_value;
                                   last(lat, lon) = v;
                                   return true;
                               });
