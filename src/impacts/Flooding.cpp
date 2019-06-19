@@ -68,7 +68,7 @@ Flooding::Flooding(const settings::SettingsNode& impact_node, AgentForcing base_
         throw std::runtime_error(isoraster_filename + ": " + e.what());
     }
     const auto isoraster_variable = isoraster_file.getVar(isoraster_varname);
-    if (isoraster_file.isNull()) {
+    if (isoraster_variable.isNull()) {
         throw std::runtime_error("Variable '" + isoraster_varname + "' not found in " + isoraster_filename);
     }
     isoraster_grid = std::make_unique<GeoGrid>(isoraster_file);
@@ -105,7 +105,7 @@ void Flooding::join(Output& output, const std::function<std::string(const std::s
         throw std::runtime_error(filename + ": " + e.what());
     }
     const auto forcing_variable = forcing_file.getVar(forcing_varname);
-    if (forcing_file.isNull()) {
+    if (forcing_variable.isNull()) {
         throw std::runtime_error("Variable '" + forcing_varname + "' not found in " + forcing_filename);
     }
     // TODO check dimensions
@@ -122,7 +122,7 @@ void Flooding::join(Output& output, const std::function<std::string(const std::s
         throw std::runtime_error(proxy_filename + ": " + e.what());
     }
     const auto proxy_variable = proxy_file.getVar(proxy_varname);
-    if (proxy_file.isNull()) {
+    if (proxy_variable.isNull()) {
         throw std::runtime_error("Variable '" + proxy_varname + "' not found in " + proxy_filename);
     }
     // TODO check dimensions
