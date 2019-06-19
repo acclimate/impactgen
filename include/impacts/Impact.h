@@ -21,7 +21,7 @@
 #ifndef IMPACTGEN_IMPACT_H
 #define IMPACTGEN_IMPACT_H
 
-#include <functional>
+#include "helpers.h"
 
 namespace impactgen {
 
@@ -29,7 +29,7 @@ class Output;
 
 class Impact {
   public:
-    virtual void join(Output& output, const std::function<std::string(const std::string&)>& template_func) = 0;
+    virtual void join(Output& output, const TemplateFunction& template_func) = 0;
     virtual ~Impact() {}
 };
 

@@ -35,12 +35,11 @@ extern const char* impactgen_git_diff;
 namespace impactgen {
 
 Output::Output(const settings::SettingsNode& settings) {
-    filename = fill_template(settings["output"]["file"].as<std::string>(), [&](const std::string& key) {
+    filename = fill_template(settings["output"]["file"].as<std::string>(), [&](const std::string& key, const std::string& temp) {
         if (settings.has(key)) {
             return settings[key].as<std::string>();
-        } else {
-            return std::string("UNKNOWN");
         }
+        throw std::runtime_error("Variable '" + key + "' not found for '" + temp + "'");
     });
     reference_time = ReferenceTime(settings["reference"].as<std::string>());
     {

@@ -70,7 +70,13 @@ static void run(const settings::SettingsNode& settings) {
         }
         bool loop = true;
         while (loop) {
-            impact->join(output, [&](const std::string& key) -> std::string { return std::to_string(std::get<0>(variables.at(key))); });
+            impact->join(output, [&](const std::string& key, const std::string& temp) -> std::string {
+                const auto& value = variables.find(key);
+                if (value == std::end(variables)) {
+                    throw std::runtime_error("Variable '" + key + "' not found for '" + temp + "'");
+                }
+                return std::to_string(std::get<0>(value->second));
+            });
             loop = false;
             for (auto& var : variables) {
                 auto& current_value = std::get<0>(var.second);

@@ -97,7 +97,7 @@ Flooding::Flooding(const settings::SettingsNode& impact_node, AgentForcing base_
     }
 }
 
-void Flooding::join(Output& output, const std::function<std::string(const std::string&)>& template_func) {
+void Flooding::join(Output& output, const TemplateFunction& template_func) {
     const auto filename = fill_template(forcing_filename, template_func);
     netCDF::NcFile forcing_file;
     try {

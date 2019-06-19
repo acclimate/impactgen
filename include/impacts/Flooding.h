@@ -54,7 +54,7 @@ class Flooding : public Impact {
 
   public:
     Flooding(const settings::SettingsNode& impact_node, AgentForcing base_forcing_p);
-    void join(Output& output, const std::function<std::string(const std::string&)>& template_func) override;
+    void join(Output& output, const TemplateFunction& template_func) override;
 };
 }  // namespace impactgen
 
