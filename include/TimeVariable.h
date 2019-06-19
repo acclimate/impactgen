@@ -35,7 +35,7 @@ class TimeVariable {
   public:
     std::vector<std::time_t> times;
 
-    explicit TimeVariable(const netCDF::NcFile& file);
+    explicit TimeVariable(const netCDF::NcFile& file, int time_shift = 0);
     explicit TimeVariable(std::vector<std::time_t> times_p, ReferenceTime reference_time_p);
     inline const ReferenceTime& ref() const { return reference_time; }
     void write_to_file(const netCDF::NcFile& file, const ReferenceTime& reference_time_p);

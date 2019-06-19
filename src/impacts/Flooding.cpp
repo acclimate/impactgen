@@ -34,6 +34,7 @@
 namespace impactgen {
 
 Flooding::Flooding(const settings::SettingsNode& impact_node, AgentForcing base_forcing_p) : base_forcing(std::move(base_forcing_p)) {
+    time_shift = impact_node["time_shift"].as<int>(0);
     chunk_size = impact_node["chunk_size"].as<std::size_t>(10);
     verbose = impact_node["verbose"].as<bool>(false);
     forcing_filename = impact_node["flood_fraction"]["file"].as<std::string>();
@@ -109,7 +110,7 @@ void Flooding::join(Output& output, const std::function<std::string(const std::s
         throw std::runtime_error("Variable '" + forcing_varname + "' not found in " + forcing_filename);
     }
     // TODO check dimensions
-    TimeVariable time_variable(forcing_file);
+    TimeVariable time_variable(forcing_file, time_shift);
     GeoGrid forcing_grid(forcing_file);
     if (!isoraster_grid->is_compatible(forcing_grid)) {
         throw std::runtime_error("Forcing and ISO raster not compatible in raster resolution");

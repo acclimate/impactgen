@@ -26,7 +26,7 @@
 
 namespace impactgen {
 
-TimeVariable::TimeVariable(const netCDF::NcFile& file) {
+TimeVariable::TimeVariable(const netCDF::NcFile& file, int time_shift) {
     const auto time_variable = file.getVar("time");
     const auto time_dimension = file.getDim("time");
     if (time_variable.isNull() || time_dimension.isNull()) {
@@ -38,7 +38,7 @@ TimeVariable::TimeVariable(const netCDF::NcFile& file) {
     times.resize(time_dimension.getSize());
     std::vector<int> tmp(times.size());
     time_variable.getVar({0}, {time_dimension.getSize()}, &tmp[0]);
-    std::transform(std::begin(tmp), std::end(tmp), std::begin(times), [&](int t) -> std::time_t { return reference_time.unreference(t); });
+    std::transform(std::begin(tmp), std::end(tmp), std::begin(times), [&](int t) -> std::time_t { return reference_time.unreference(t + time_shift); });
 }
 
 TimeVariable::TimeVariable(std::vector<std::time_t> times_p, ReferenceTime reference_time_p)

@@ -50,6 +50,7 @@ class Flooding : public Impact {
     std::vector<int> sectors;
     std::vector<int> regions;
     AgentForcing base_forcing;
+    int time_shift;
 
   public:
     Flooding(const settings::SettingsNode& impact_node, AgentForcing base_forcing_p);
