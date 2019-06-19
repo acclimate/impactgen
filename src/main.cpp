@@ -18,6 +18,7 @@
   <http://www.gnu.org/licenses/>.
 */
 
+#include <algorithm>
 #include <fstream>
 #include <iostream>
 #include <memory>
@@ -26,6 +27,7 @@
 #include "Output.h"
 #include "helpers.h"
 #include "impacts/Flooding.h"
+#include "progressbar.h"
 #include "settingsnode.h"
 #include "settingsnode/inner.h"
 #include "settingsnode/yaml.h"
@@ -41,22 +43,27 @@ static void run(const settings::SettingsNode& settings) {
     output.add_regions(settings["regions"]);
     output.add_sectors(settings["sectors"]);
     output.open();
-    for (const auto& impact_node : settings["impacts"].as_sequence()) {  // TODO parallelize
+    std::vector<settings::SettingsNode> impact_nodes;
+    auto sequence = settings["impacts"].as_sequence();
+    std::copy(std::begin(sequence), std::end(sequence), std::back_inserter(impact_nodes));
+    progressbar::ProgressBar all_impacts_bar(impact_nodes.size(), "Impacts");
+    for (const auto& impact_node : impact_nodes) {
         std::unique_ptr<impactgen::Impact> impact;
-        const std::string& type = impact_node["type"].as<std::string>();
-        if (type == "shock") {
-            // TODO
-        } else if (type == "flooding") {
-            impact = std::make_unique<impactgen::Flooding>(impact_node, output.prepare_forcing());
-        } else if (type == "tropical_cyclone") {
-            // TODO
-        } else if (type == "heat_labor_productivity") {
-            // TODO
-        } else if (type == "event_series") {
-            // TODO
-        } else {
-            throw std::runtime_error("Unknown impact type '" + type + "'");
+        std::string impact_name;
+        const auto& type = impact_node["type"].as<settings::hstring>();
+        switch (type) {
+            // TODO event_series
+            // TODO heat_labor_productivity
+            // TODO shock
+            // TODO tropical_cyclone
+            case settings::hstring::hash("flooding"):
+                impact = std::make_unique<impactgen::Flooding>(impact_node, output.prepare_forcing());
+                impact_name = "Flooding";
+                break;
+            default:
+                throw std::runtime_error("Unsupported impact type '" + std::string(type) + "'");
         }
+        std::size_t combination_count = 1;
         std::unordered_map<std::string, std::tuple<int, int, int>> variables;
         if (impact_node.has("variables")) {
             for (const auto& var : impact_node["variables"].as_map()) {
@@ -66,8 +73,10 @@ static void run(const settings::SettingsNode& settings) {
                     throw std::runtime_error(var.first + ": 'from' value should be less than 'to' value");
                 }
                 variables[var.first] = std::make_tuple(min_value, min_value, max_value);
+                combination_count *= (max_value - min_value + 1);
             }
         }
+        progressbar::ProgressBar impact_bar(combination_count, impact_name, true);
         bool loop = true;
         while (loop) {
             impact->join(output, [&](const std::string& key, const std::string& temp) -> std::string {
@@ -89,9 +98,13 @@ static void run(const settings::SettingsNode& settings) {
                 const auto min_value = std::get<1>(var.second);
                 current_value = min_value;
             }
+            ++impact_bar;
         }
+        impact_bar.close(true);
+        ++all_impacts_bar;
     }
     output.close();
+    all_impacts_bar.close();
 }
 
 static void print_usage(const char* program_name) {

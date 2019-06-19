@@ -173,13 +173,12 @@ void Flooding::join(Output& output, const TemplateFunction& template_func) {
     nvector::Vector<ForcingType, 2> current(0, forcing_grid.y_size(), forcing_grid.x_size());
     if (last.data().size() == 0) {
         last.resize(0, forcing_grid.y_size(), forcing_grid.x_size());
-    } else if (last.data().size() != current.data().size()) {  // TODO
+    } else if (last.data().size() != current.data().size()) {  // TODO check actual GeoGrids
         throw std::runtime_error("Incompatible grid sizes");
     }
-    // TODO check actual GeoGrids
     std::size_t chunk_pos = chunk_size;
     std::vector<ForcingType> chunk_buffer(chunk_size * forcing_grid.size());
-    progressbar::ProgressBar time_bar(time_variable.times.size(), filename);
+    progressbar::ProgressBar time_bar(time_variable.times.size(), filename, true);
     std::vector<ForcingType> region_forcing(regions.size());
     for (std::size_t t = 0; t < time_variable.times.size(); ++t) {
         if (chunk_pos == chunk_size) {
