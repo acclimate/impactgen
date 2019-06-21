@@ -497,6 +497,9 @@ class View {
     using split_type = View<T, inner_dim, Iterator, Tref>;
 
     View(){};
+    View(View&) = delete;
+    View(const View&) = delete;
+    View(View&&) = default;
     View(Iterator it_p, std::array<Slice, dim> dims_p) : it(std::move(it_p)), dims(std::move(dims_p)){};
 
     template<typename... Args, typename std::enable_if<detail::all_equal<Slice, Args...>::value>::type* = nullptr>
@@ -596,6 +599,8 @@ class Vector : public View<T, dim, typename Storage::iterator> {
     Storage data_m;
 
   public:
+    Vector() { it = std::begin(data_m); }
+
     template<typename... Args>
     Vector(const T& initial_value, Args&&... args) {
         this->template initialize_sizes<0>(std::forward<Args>(args)...);
