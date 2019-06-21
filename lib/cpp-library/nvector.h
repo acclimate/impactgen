@@ -1,11 +1,10 @@
 #ifndef NARRAY_VIEW_H
 #define NARRAY_VIEW_H
 
-// TODO const_iterator
-
 #include <algorithm>
 #include <array>
 #include <cstddef>
+#include <iterator>
 #include <stdexcept>
 #include <tuple>
 #include <utility>
@@ -317,6 +316,62 @@ class View {
     };
     friend class iterator;
 
+    class const_iterator : public std::iterator<std::output_iterator_tag, T> {
+        friend class View;
+
+      protected:
+        View const* view = nullptr;
+        std::array<std::size_t, dim> pos_m;
+        std::size_t total_index;
+        std::size_t end_index;
+        const_iterator(){};
+        const_iterator(View* view_p, std::array<std::size_t, dim> pos_p, std::size_t total_index_p, std::size_t end_index_p)
+            : view(view_p), pos_m(pos_p), total_index(total_index_p), end_index(end_index_p){};
+
+      public:
+        static const std::size_t dimensions = dim;
+        using type = T;
+        using reference_type = Tref;
+
+        static inline const_iterator begin(View const* view_p) {
+            const_iterator res;
+            res.view = view_p;
+            res.end_index = detail::foreach_dim<0, dim>::begin(1, res.pos_m, view_p->dims);
+            res.total_index = 0;
+            return res;
+        }
+        static inline const_iterator end(View const* view_p) {
+            const_iterator res;
+            res.view = view_p;
+            res.end_index = detail::foreach_dim<0, dim>::end(1, res.pos_m, view_p->dims);
+            res.total_index = res.end_index;
+            return res;
+        }
+        inline bool ended() const { return total_index == end_index; }
+        inline std::size_t get_end_index() const { return end_index; }
+        inline std::size_t get_index() const { return total_index; }
+        inline const std::array<std::size_t, dim>& pos() const { return pos_m; }
+        inline const Tref operator*() { return detail::foreach_dim<0, dim>::template dereference<Tref>(0, pos_m, view->dims, view->it); }
+        inline const_iterator operator++() {
+            detail::foreach_dim<0, dim>::increase(pos_m, view->dims);
+            ++total_index;
+            return *this;
+        }
+        inline const_iterator operator+(std::size_t i) const {
+            if (total_index + i >= end_index) {
+                return end(view);
+            }
+            std::array<std::size_t, dim> pos_l = pos_m;
+            detail::foreach_dim<0, dim>::increase(pos_l, view->dims, i);
+            return const_iterator(view, std::move(pos_l), total_index + i, end_index);
+        }
+        inline bool operator<(const const_iterator& other) const { return total_index < other.total_index; }
+        inline bool operator<(std::size_t other) const { return total_index < other; }
+        inline bool operator==(const const_iterator& other) const { return total_index == other.total_index; }
+        inline bool operator!=(const const_iterator& other) const { return total_index != other.total_index; }
+    };
+    friend class const_iterator;
+
   protected:
     std::array<Slice, dim> dims;
     Iterator it;
@@ -534,8 +589,8 @@ class View {
 
     inline iterator begin() { return iterator::begin(this); }
     inline iterator end() { return iterator::end(this); }
-    inline const iterator begin() const { return iterator::begin(this); }
-    inline const iterator end() const { return iterator::end(this); }
+    inline const_iterator begin() const { return const_iterator::begin(this); }
+    inline const_iterator end() const { return const_iterator::end(this); }
 };
 
 template<typename T, std::size_t dim, class Storage = std::vector<T>>
