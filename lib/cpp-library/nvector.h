@@ -16,9 +16,9 @@ struct Slice;
 
 namespace detail {
 
-inline std::size_t multiply_all() { return 1; }
+inline int multiply_all() { return 1; }
 template<typename... Args>
-inline std::size_t multiply_all(std::size_t arg, Args... args) {
+inline int multiply_all(int arg, Args... args) {
     return arg * multiply_all(args...);
 }
 
@@ -237,9 +237,9 @@ struct Split<false, Args...> {
 };
 
 struct Slice {
-    std::size_t begin;
-    std::size_t size;
-    std::size_t stride;
+    std::size_t begin = 0;
+    std::size_t size = 0;
+    int stride = 1;
 };
 
 template<typename T, std::size_t dim, class Iterator = typename std::vector<T>::iterator, typename Tref = typename std::add_lvalue_reference<T>::type>
