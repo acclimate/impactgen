@@ -166,24 +166,20 @@ inline void foreach_iterator_parallel(Function&& func, Additional&& temp, Arg&& 
 template<std::size_t i, std::size_t n, typename... Args>
 struct foreach_helper {
     template<typename Function, std::size_t... Ns>
-    static inline bool foreach_view(Function&& func, std::tuple<Args...>&& views) {
-        return foreach_helper<i + 1, n, Args...>::template foreach_view<Function, Ns..., i>(std::forward<Function>(func),
-                                                                                            std::forward<std::tuple<Args...>>(views));
+    static inline bool foreach_view(Function&& func, const std::tuple<Args...>& views) {
+        return foreach_helper<i + 1, n, Args...>::template foreach_view<Function, Ns..., i>(std::forward<Function>(func), views);
     }
     template<typename Function, std::size_t... Ns>
-    static inline void foreach_view_parallel(Function&& func, std::tuple<Args...>&& views) {
-        foreach_helper<i + 1, n, Args...>::template foreach_view_parallel<Function, Ns..., i>(std::forward<Function>(func),
-                                                                                              std::forward<std::tuple<Args...>>(views));
+    static inline void foreach_view_parallel(Function&& func, const std::tuple<Args...>& views) {
+        foreach_helper<i + 1, n, Args...>::template foreach_view_parallel<Function, Ns..., i>(std::forward<Function>(func), views);
     }
     template<typename Function, typename Splittype, std::size_t... Ns>
-    static inline bool foreach_split(Function&& func, std::tuple<Args...>&& views) {
-        return foreach_helper<i + 1, n, Args...>::template foreach_split<Function, Splittype, Ns..., i>(std::forward<Function>(func),
-                                                                                                        std::forward<std::tuple<Args...>>(views));
+    static inline bool foreach_split(Function&& func, const std::tuple<Args...>& views) {
+        return foreach_helper<i + 1, n, Args...>::template foreach_split<Function, Splittype, Ns..., i>(std::forward<Function>(func), views);
     }
     template<typename Function, typename Splittype, std::size_t... Ns>
-    static inline void foreach_split_parallel(Function&& func, std::tuple<Args...>&& views) {
-        foreach_helper<i + 1, n, Args...>::template foreach_split_parallel<Function, Splittype, Ns..., i>(std::forward<Function>(func),
-                                                                                                          std::forward<std::tuple<Args...>>(views));
+    static inline void foreach_split_parallel(Function&& func, const std::tuple<Args...>& views) {
+        foreach_helper<i + 1, n, Args...>::template foreach_split_parallel<Function, Splittype, Ns..., i>(std::forward<Function>(func), views);
     }
 };
 
@@ -199,19 +195,19 @@ inline void foreach_split_helper_parallel(Function&& func, Args&&... splits) {
 template<std::size_t n, typename... Args>
 struct foreach_helper<n, n, Args...> {
     template<typename Function, std::size_t... Ns>
-    static inline bool foreach_view(Function&& func, std::tuple<Args...>&& views) {
+    static inline bool foreach_view(Function&& func, const std::tuple<Args...>& views) {
         return foreach_iterator(std::forward<Function>(func), 0, std::begin(std::get<Ns>(views))...);
     }
     template<typename Function, std::size_t... Ns>
-    static inline void foreach_view_parallel(Function&& func, std::tuple<Args...>&& views) {
+    static inline void foreach_view_parallel(Function&& func, const std::tuple<Args...>& views) {
         foreach_iterator_parallel(std::forward<Function>(func), 0, std::begin(std::get<Ns>(views))...);
     }
     template<typename Function, typename Splittype, std::size_t... Ns>
-    static inline bool foreach_split(Function&& func, std::tuple<Args...>&& views) {
+    static inline bool foreach_split(Function&& func, const std::tuple<Args...>& views) {
         return foreach_split_helper(std::forward<Function>(func), std::get<Ns>(views).template split<Splittype>()...);
     }
     template<typename Function, typename Splittype, std::size_t... Ns>
-    static inline void foreach_split_parallel(Function&& func, std::tuple<Args...>&& views) {
+    static inline void foreach_split_parallel(Function&& func, const std::tuple<Args...>& views) {
         foreach_split_helper_parallel(std::forward<Function>(func), std::get<Ns>(views).template split<Splittype>()...);
     }
 };
@@ -621,27 +617,33 @@ class Vector : public View<T, dim, typename Storage::iterator> {
 };
 
 template<typename... Args, typename Function>
-inline bool foreach_view(std::tuple<Args...>&& views, Function&& func) {
-    return detail::foreach_helper<0, std::tuple_size<std::tuple<Args...>>::value, Args...>::foreach_view(std::forward<Function>(func),
-                                                                                                         std::forward<std::tuple<Args...>>(views));
+inline bool foreach_view(const std::tuple<Args...>& views, Function&& func) {
+    return detail::foreach_helper<0, std::tuple_size<std::tuple<Args...>>::value, Args...>::foreach_view(std::forward<Function>(func), views);
 }
 
 template<typename... Args, typename Function>
-inline void foreach_view_parallel(std::tuple<Args...>&& views, Function&& func) {
-    detail::foreach_helper<0, std::tuple_size<std::tuple<Args...>>::value, Args...>::foreach_view_parallel(std::forward<Function>(func),
-                                                                                                           std::forward<std::tuple<Args...>>(views));
+inline void foreach_view_parallel(const std::tuple<Args...>& views, Function&& func) {
+    detail::foreach_helper<0, std::tuple_size<std::tuple<Args...>>::value, Args...>::foreach_view_parallel(std::forward<Function>(func), views);
 }
 
 template<typename Splittype, typename... Args, typename Function>
-inline bool foreach_split(std::tuple<Args...>&& views, Function&& func) {
-    return detail::foreach_helper<0, sizeof...(Args), Args...>::template foreach_split<Function, Splittype>(std::forward<Function>(func),
-                                                                                                            std::forward<std::tuple<Args...>>(views));
+inline bool foreach_split(const std::tuple<Args...>& views, Function&& func) {
+    return detail::foreach_helper<0, sizeof...(Args), Args...>::template foreach_split<Function, Splittype>(std::forward<Function>(func), views);
 }
 
 template<typename Splittype, typename... Args, typename Function>
-inline void foreach_split_parallel(std::tuple<Args...>&& views, Function&& func) {
-    detail::foreach_helper<0, sizeof...(Args), Args...>::template foreach_split_parallel<Function, Splittype>(std::forward<Function>(func),
-                                                                                                              std::forward<std::tuple<Args...>>(views));
+inline void foreach_split_parallel(const std::tuple<Args...>& views, Function&& func) {
+    detail::foreach_helper<0, sizeof...(Args), Args...>::template foreach_split_parallel<Function, Splittype>(std::forward<Function>(func), views);
+}
+
+template<typename... Args>
+inline std::tuple<const Args&...> const_views(const Args&... args) {
+    return std::tuple<const Args&...>(args...);
+}
+
+template<typename... Args>
+inline std::tuple<Args&...> collect_views(Args&... args) {
+    return std::tuple<Args&...>(args...);
 }
 
 }  // namespace nvector
