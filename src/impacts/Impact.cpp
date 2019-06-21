@@ -18,34 +18,16 @@
   <http://www.gnu.org/licenses/>.
 */
 
-#ifndef IMPACTGEN_FLOODING_H
-#define IMPACTGEN_FLOODING_H
-
-#include <string>
-#include "impacts/AgentImpact.h"
 #include "impacts/Impact.h"
-#include "impacts/ProxiedImpact.h"
+#include <algorithm>
+#include <string>
 #include "settingsnode.h"
-#include "GeoGrid.h"
 
 namespace impactgen {
 
-class Output;
+Impact::Impact(const settings::SettingsNode& impact_node) {
+    time_shift = impact_node["time_shift"].as<int>(0);
+    verbose = impact_node["verbose"].as<bool>(false);
+}
 
-class Flooding : public AgentImpact, public ProxiedImpact, public Impact {
-  protected:
-    std::size_t chunk_size;
-    nvector::Vector<ForcingType, 2> last;
-    GeoGrid<float> last_grid;
-    ForcingType recovery_exponent;
-    ForcingType recovery_threshold;
-    std::string forcing_filename;
-    std::string forcing_varname;
-
-  public:
-    Flooding(const settings::SettingsNode& impact_node, AgentForcing base_forcing_p);
-    void join(Output& output, const TemplateFunction& template_func) override;
-};
 }  // namespace impactgen
-
-#endif

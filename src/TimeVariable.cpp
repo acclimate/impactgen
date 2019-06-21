@@ -26,11 +26,11 @@
 
 namespace impactgen {
 
-TimeVariable::TimeVariable(const netCDF::NcFile& file, int time_shift) {
+TimeVariable::TimeVariable(const netCDF::NcFile& file, const std::string& filename, int time_shift) {
     const auto time_variable = file.getVar("time");
     const auto time_dimension = file.getDim("time");
     if (time_variable.isNull() || time_dimension.isNull()) {
-        throw std::runtime_error("No time information found");
+        throw std::runtime_error(filename + ": No time information found");
     }
     std::string time_units;
     time_variable.getAtt("units").getValues(time_units);

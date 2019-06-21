@@ -26,118 +26,144 @@
 
 namespace impactgen {
 
-GeoGrid::GeoGrid(const netCDF::NcFile& file) : x(*this), y(*this) {
+template<typename T>
+void GeoGrid<T>::read_from_netcdf(const netCDF::NcFile& file, const std::string& filename) {
     {
-        netCDF::NcVar x_var = file.getVar("x");
-        if (x_var.isNull()) {
-            x_var = file.getVar("lon");
-            if (x_var.isNull()) {
-                x_var = file.getVar("longitude");
-                if (x_var.isNull()) {
-                    throw std::runtime_error("No longitude variable found");
-                }
-            }
-        }
-        x_var.getVar({0}, &x_min);
-        x_count = x_var.getDim(0).getSize();
-        x_var.getVar({x_count - 1}, &x_max);
-        float tmp;
-        x_var.getVar({1}, &tmp);
-        x_gridsize = tmp - x_min;
-        t_x_min = std::min(x_min, x_max);
-        t_x_max = std::max(x_min, x_max);
-        t_x_gridsize = std::abs(x_gridsize);
-    }
-    {
-        netCDF::NcVar y_var = file.getVar("y");
+        auto y_var = file.getVar("y");
         if (y_var.isNull()) {
             y_var = file.getVar("lat");
             if (y_var.isNull()) {
                 y_var = file.getVar("latitude");
                 if (y_var.isNull()) {
-                    throw std::runtime_error("No latitude variable found");
+                    throw std::runtime_error(filename + ": No latitude variable found");
                 }
             }
         }
-        y_var.getVar({0}, &y_min);
-        y_count = y_var.getDim(0).getSize();
-        y_var.getVar({y_count - 1}, &y_max);
-        float tmp;
-        y_var.getVar({1}, &tmp);
-        y_gridsize = tmp - y_min;
-        t_y_min = std::min(y_min, y_max);
-        t_y_max = std::max(y_min, y_max);
-        t_y_gridsize = std::abs(y_gridsize);
+        lat_count = y_var.getDim(0).getSize();
+        if (lat_count < 2) {
+            throw std::runtime_error(filename + ": Too few latitude values");
+        }
+        std::vector<T> values(lat_count);
+        y_var.getVar(&values[0]);
+        const auto lat_start = values[0];
+        const auto lat_stop = values[lat_count - 1];
+        lat_stepsize = values[1] - lat_start;
+        for (int i = 2; i < lat_count; ++i) {
+            if (std::abs((values[i] - values[i - 1] - lat_stepsize) / lat_stepsize) > 1e-2) {
+                throw std::runtime_error(filename + ": No gaps in latitude values supported");
+            }
+        }
+        lat_min = std::min(lat_start, lat_stop);
+        lat_max = std::max(lat_start, lat_stop);
+        lat_abs_stepsize = std::abs(lat_stepsize);
     }
-}
-
-float GeoGrid::operator/(const GeoGrid& other) const { return t_x_gridsize * t_y_gridsize / other.abs_x_gridsize() / other.abs_y_gridsize(); }
-
-bool GeoGrid::is_compatible(const GeoGrid& other) const {
-    return std::abs(t_x_gridsize - other.abs_x_gridsize()) < 1e-5 && std::abs(t_y_gridsize - other.abs_y_gridsize()) < 1e-5;
-}
-
-inline unsigned int GeoGrid::x_index(float x_var) const {
-    if (x_min < x_max) {
-        if (x_var < x_min || x_var > x_max + x_gridsize) {
-            return std::numeric_limits<unsigned int>::quiet_NaN();
+    {
+        auto x_var = file.getVar("x");
+        if (x_var.isNull()) {
+            x_var = file.getVar("lon");
+            if (x_var.isNull()) {
+                x_var = file.getVar("longitude");
+                if (x_var.isNull()) {
+                    throw std::runtime_error(filename + ": No longitude variable found");
+                }
+            }
         }
-    } else {
-        if (x_var > x_min || x_var < x_max + x_gridsize) {
-            return std::numeric_limits<unsigned int>::quiet_NaN();
+        lon_count = x_var.getDim(0).getSize();
+        if (lon_count < 2) {
+            throw std::runtime_error(filename + ": Too few longitude values");
         }
+        std::vector<T> values(lon_count);
+        x_var.getVar(&values[0]);
+        const auto lon_start = values[0];
+        const auto lon_stop = values[lon_count - 1];
+        lon_stepsize = values[1] - lon_start;
+        for (int i = 2; i < lon_count; ++i) {
+            if (std::abs((values[i] - values[i - 1] - lon_stepsize) / lon_stepsize) > 1e-2) {
+                throw std::runtime_error(filename + ": No gaps in longitude values supported");
+            }
+        }
+        lon_min = std::min(lon_start, lon_stop);
+        lon_max = std::max(lon_start, lon_stop);
+        lon_abs_stepsize = std::abs(lon_stepsize);
     }
-    return static_cast<unsigned int>((x_var - x_min) * x_count / (x_max - x_min + x_gridsize));
-}
-
-inline unsigned int GeoGrid::y_index(float y_var) const {
-    if (y_min < y_max) {
-        if (y_var < y_min || y_var > y_max + y_gridsize) {
-            return std::numeric_limits<unsigned int>::quiet_NaN();
-        }
-    } else {
-        if (y_var > y_min || y_var < y_max + y_gridsize) {
-            return std::numeric_limits<unsigned int>::quiet_NaN();
-        }
-    }
-    return static_cast<unsigned int>((y_var - y_min) * y_count / (y_max - y_min + y_gridsize));
 }
 
 template<typename T>
-T GeoGrid::read(float x_var, float y_var, const std::vector<T>& data) const {
-    const unsigned int x_i = x_index(x_var);
-    if (std::isnan(x_i)) {
-        return std::numeric_limits<T>::quiet_NaN();
-    }
-    const unsigned int y_i = y_index(y_var);
-    if (std::isnan(y_i)) {
-        return std::numeric_limits<T>::quiet_NaN();
-    }
-    T res = data[y_i * x_count + x_i];
-    if (res > 1e18) {
-        res = std::numeric_limits<T>::quiet_NaN();
-    }
-    return res;
+T GeoGrid<T>::operator/(const GeoGrid<T>& other) const {
+    return lat_abs_stepsize * lon_abs_stepsize / other.lat_abs_stepsize / other.lon_abs_stepsize;
 }
 
 template<typename T>
-void GeoGrid::write(float x_var, float y_var, std::vector<T>& data, T value) const {
-    const unsigned int x_i = x_index(x_var);
-    if (std::isnan(x_i)) {
-        return;
-    }
-    const unsigned int y_i = y_index(y_var);
-    if (std::isnan(y_i)) {
-        return;
-    }
-    data[y_i * x_count + x_i] = value;
+bool GeoGrid<T>::is_compatible(const GeoGrid<T>& other) const {
+    return std::abs(lat_abs_stepsize - other.lat_abs_stepsize) / lat_abs_stepsize < 1e-2
+           && std::abs(lon_abs_stepsize - other.lon_abs_stepsize) / lon_abs_stepsize < 1e-2;
 }
 
-template float GeoGrid::read(float x_var, float y_var, const std::vector<float>& data) const;
-template double GeoGrid::read(float x_var, float y_var, const std::vector<double>& data) const;
-template int GeoGrid::read(float x_var, float y_var, const std::vector<int>& data) const;
-template void GeoGrid::write(float x_var, float y_var, std::vector<float>& data, float value) const;
-template void GeoGrid::write(float x_var, float y_var, std::vector<double>& data, double value) const;
-template void GeoGrid::write(float x_var, float y_var, std::vector<int>& data, int value) const;
+template<typename T>
+std::size_t GeoGrid<T>::lat_index(T lat) const {
+    const auto res = (lat - lat_min) * lat_count / (lat_max - lat_min + lat_stepsize);
+    if (res < 0 || res >= lat_count) {
+        return std::numeric_limits<std::size_t>::quiet_NaN();
+    }
+    return static_cast<std::size_t>(res);
+}
+
+template<typename T>
+std::size_t GeoGrid<T>::lon_index(T lon) const {
+    const auto res = (lon - lon_min) * lon_count / (lon_max - lon_min + lon_stepsize);
+    if (res < 0 || res >= lon_count) {
+        return std::numeric_limits<std::size_t>::quiet_NaN();
+    }
+    return static_cast<std::size_t>(res);
+}
+
+template<typename T>
+template<typename V>
+nvector::View<V, 2> GeoGrid<T>::box(const nvector::View<V, 2>& view, T lat_min_p, T lat_max_p, T lon_min_p, T lon_max_p) const {
+    const auto& lat_slice = view.template slice<0>();
+    const auto& lon_slice = view.template slice<1>();
+    nvector::Slice new_lat_slice;
+    nvector::Slice new_lon_slice;
+
+    const auto lat_min_index = lat_index(lat_min_p);
+    const auto lat_max_index = lat_index(lat_max_p);
+    if (lat_min_index > lat_max_index) {
+        new_lat_slice.begin = lat_slice.begin + lat_max_index * lat_slice.stride;
+        new_lat_slice.size = lat_min_index - lat_max_index;
+        new_lat_slice.stride = lat_slice.stride;
+    } else {
+        new_lat_slice.begin = lat_slice.begin + lat_min_index * lat_slice.stride;
+        new_lat_slice.size = lat_max_index - lat_min_index;
+        new_lat_slice.stride = lat_slice.stride;
+    }
+
+    const auto lon_min_index = lon_index(lon_min_p);
+    const auto lon_max_index = lon_index(lon_max_p);
+    if (lon_min_index > lon_max_index) {
+        new_lon_slice.begin = lon_slice.begin + lon_max_index * lon_slice.stride;
+        new_lon_slice.size = lon_min_index - lon_max_index;
+        new_lon_slice.stride = lon_slice.stride;
+    } else {
+        new_lon_slice.begin = lon_slice.begin + lon_min_index * lon_slice.stride;
+        new_lon_slice.size = lon_max_index - lon_min_index;
+        new_lon_slice.stride = lon_slice.stride;
+    }
+
+    return typename nvector::View<V, 2>(view.data(), {new_lat_slice, new_lon_slice});
+}
+
+template class GeoGrid<double>;
+template class GeoGrid<float>;
+template nvector::View<double, 2> GeoGrid<double>::box(
+    const nvector::View<double, 2>& view, double lat_min_p, double lat_max_p, double lon_min_p, double lon_max_p) const;
+template nvector::View<double, 2> GeoGrid<float>::box(
+    const nvector::View<double, 2>& view, float lat_min_p, float lat_max_p, float lon_min_p, float lon_max_p) const;
+template nvector::View<float, 2> GeoGrid<double>::box(
+    const nvector::View<float, 2>& view, double lat_min_p, double lat_max_p, double lon_min_p, double lon_max_p) const;
+template nvector::View<float, 2> GeoGrid<float>::box(
+    const nvector::View<float, 2>& view, float lat_min_p, float lat_max_p, float lon_min_p, float lon_max_p) const;
+template nvector::View<int, 2> GeoGrid<double>::box(
+    const nvector::View<int, 2>& view, double lat_min_p, double lat_max_p, double lon_min_p, double lon_max_p) const;
+template nvector::View<int, 2> GeoGrid<float>::box(const nvector::View<int, 2>& view, float lat_min_p, float lat_max_p, float lon_min_p, float lon_max_p) const;
 
 }  // namespace impactgen

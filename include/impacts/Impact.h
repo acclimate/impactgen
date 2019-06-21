@@ -22,12 +22,19 @@
 #define IMPACTGEN_IMPACT_H
 
 #include "helpers.h"
+#include "settingsnode.h"
 
 namespace impactgen {
 
 class Output;
 
 class Impact {
+  protected:
+    bool verbose;
+    int time_shift;
+
+    Impact(const settings::SettingsNode& impact_node);
+
   public:
     virtual void join(Output& output, const TemplateFunction& template_func) = 0;
     virtual ~Impact() {}

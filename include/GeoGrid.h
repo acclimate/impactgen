@@ -26,90 +26,65 @@
 #include <memory>
 #include <string>
 #include <vector>
-#include "netcdf_headers.h"
+#include "netcdftools.h"
+#include "nvector.h"
 
 namespace impactgen {
 
-class GeoGrid {
-  protected:
-    unsigned int time_step = 0;
-    float x_min = 0;
-    float x_max = 0;
-    float x_gridsize = 0;
-    float t_x_gridsize = 0;
-    float t_x_min = 0;
-    float t_x_max = 0;
-    std::size_t x_count = 0;
-    float y_min = 0;
-    float y_max = 0;
-    float y_gridsize = 0;
-    float t_y_gridsize = 0;
-    float t_y_min = 0;
-    float t_y_max = 0;
-    std::size_t y_count = 0;
+template<typename T>
+struct GeoGrid {
+    T lon_min = 0;
+    T lon_max = 0;
+    T lon_stepsize = 0;
+    T lon_abs_stepsize = 0;
+    std::size_t lon_count = 0;
+    T lat_min = 0;
+    T lat_max = 0;
+    T lat_stepsize = 0;
+    T lat_abs_stepsize = 0;
+    std::size_t lat_count = 0;
 
-    unsigned int x_index(float x_var) const;
-    unsigned int y_index(float y_var) const;
-
-  public:
-    class iterator {
-      private:
-        float l;
-        std::size_t c;
-        const float gridsize;
-        const std::size_t count;
-
-      public:
-        using iterator_category = std::forward_iterator_tag;
-        iterator(float l_, const std::size_t& c_, float gridsize_, const std::size_t& count_) : l(l_), c(c_), gridsize(gridsize_), count(count_) {}
-        iterator operator++() {
-            if (c < count) {
-                c++;
-                l += gridsize;
-            }
-            return *this;
-        }
-        float operator*() const { return l; }
-        bool operator==(const iterator& rhs) const { return c == rhs.c; }
-        bool operator!=(const iterator& rhs) const { return c != rhs.c; }
-    };
-    class X {
-      protected:
-        const GeoGrid& grid;
-
-      public:
-        explicit X(const GeoGrid& grid_) : grid(grid_) {}
-        iterator begin() const { return iterator(grid.t_x_min, 0, grid.t_x_gridsize, grid.x_count); }
-        iterator end() const { return iterator(grid.t_x_max, grid.x_count, grid.t_x_gridsize, grid.x_count); }
-    };
-    const X x;
-    class Y {
-      protected:
-        const GeoGrid& grid;
-
-      public:
-        explicit Y(const GeoGrid& grid_) : grid(grid_) {}
-        iterator begin() const { return iterator(grid.t_y_min, 0, grid.t_y_gridsize, grid.y_count); }
-        iterator end() const { return iterator(grid.t_y_max, grid.y_count, grid.t_y_gridsize, grid.y_count); }
-    };
-    const Y y;
-    inline float abs_x_gridsize() const { return t_x_gridsize; }
-    inline float abs_y_gridsize() const { return t_y_gridsize; }
-
-    GeoGrid() : x(*this), y(*this) {}
-    explicit GeoGrid(const netCDF::NcFile& file);
-    inline std::size_t size() const { return x_count * y_count; }
-    inline std::size_t x_size() const { return x_count; }
-    inline std::size_t y_size() const { return y_count; }
-    inline float get_x(std::size_t x_) { return t_x_min + t_x_gridsize * x_; }
-    inline float get_y(std::size_t y_) { return t_y_min + t_y_gridsize * y_; }
-    float operator/(const GeoGrid& other) const;
+    GeoGrid() {}
+    void read_from_netcdf(const netCDF::NcFile& file, const std::string& filename);
+    inline std::size_t size() const { return lat_count * lon_count; }
+    std::size_t lat_index(T lat) const;
+    std::size_t lon_index(T lon) const;
+    inline T lat(std::size_t lat_index) { return lat_min + lat_abs_stepsize * lat_index; }
+    inline T lon(std::size_t lon_index) { return lon_min + lon_abs_stepsize * lon_index; }
+    T operator/(const GeoGrid& other) const;
     bool is_compatible(const GeoGrid& other) const;
-    template<typename T>
-    T read(float x_var, float y_var, const std::vector<T>& data) const;
-    template<typename T>
-    void write(float x_var, float y_var, std::vector<T>& data, T value) const;
+    template<typename V>
+    nvector::View<V, 2> box(const nvector::View<V, 2>& view, T lat_min_p, T lat_max_p, T lon_min_p, T lon_max_p) const;
 };
+
+template<typename Func, typename T>
+T reduce(const Func& f, T v1, T v2) {
+    return f(v1, v2);
+}
+
+template<typename Func, typename T, typename... Args>
+T reduce(const Func& f, T v1, T v2, Args... others) {
+    return reduce(f, f(v1, v2), others...);
+}
+
+inline float max(float a, float b) { return a < b ? b : a; }
+inline float min(float a, float b) { return a > b ? b : a; }
+
+template<typename T>
+struct GridView {
+    nvector::View<T, 2>& data;
+    GeoGrid<float>& grid;
+};
+
+template<typename... Args>
+inline auto common_grid_box(const Args&... grid_views) -> decltype(std::make_tuple(grid_views.data...)) {
+    const auto lat_min = reduce(min, grid_views.grid.lat_min...);
+    const auto lat_max = reduce(max, grid_views.grid.lat_max...);
+    const auto lon_min = reduce(min, grid_views.grid.lon_min...);
+    const auto lon_max = reduce(max, grid_views.grid.lon_max...);
+    return std::make_tuple(grid_views.grid.box(grid_views.data, lat_min, lat_max, lon_min, lon_max)...);
+}
+
 }  // namespace impactgen
 
 #endif

@@ -29,7 +29,7 @@
 #include "Forcing.h"
 #include "ForcingSeries.h"
 #include "ReferenceTime.h"
-#include "netcdf_headers.h"
+#include "netcdftools.h"
 #include "settingsnode.h"
 
 namespace impactgen {

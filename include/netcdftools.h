@@ -18,34 +18,38 @@
   <http://www.gnu.org/licenses/>.
 */
 
-#ifndef IMPACTGEN_FLOODING_H
-#define IMPACTGEN_FLOODING_H
+#ifndef IMPACTGEN_NETCDF_HEADERS_H
+#define IMPACTGEN_NETCDF_HEADERS_H
 
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wignored-qualifiers"
+#pragma GCC diagnostic ignored "-Wpedantic"
+#pragma GCC diagnostic ignored "-Wunused-variable"
+
+#include <ncDim.h>
+#include <ncFile.h>
+#include <ncGroupAtt.h>
+#include <ncType.h>
+#include <ncVar.h>
+#include <netcdf>
+
+#pragma GCC diagnostic pop
+
+#include <algorithm>
 #include <string>
-#include "impacts/AgentImpact.h"
-#include "impacts/Impact.h"
-#include "impacts/ProxiedImpact.h"
-#include "settingsnode.h"
-#include "GeoGrid.h"
+#include <vector>
 
-namespace impactgen {
-
-class Output;
-
-class Flooding : public AgentImpact, public ProxiedImpact, public Impact {
-  protected:
-    std::size_t chunk_size;
-    nvector::Vector<ForcingType, 2> last;
-    GeoGrid<float> last_grid;
-    ForcingType recovery_exponent;
-    ForcingType recovery_threshold;
-    std::string forcing_filename;
-    std::string forcing_varname;
-
-  public:
-    Flooding(const settings::SettingsNode& impact_node, AgentForcing base_forcing_p);
-    void join(Output& output, const TemplateFunction& template_func) override;
-};
-}  // namespace impactgen
+inline bool check_dimensions(const netCDF::NcVar& var, const std::vector<std::string>& names) {
+    const auto& dims = var.getDims();
+    if (dims.size() != names.size()) {
+        return false;
+    }
+    for (int i = 0; i < names.size(); ++i) {
+        if (dims[i].getName() != names[i]) {
+            return false;
+        }
+    }
+    return true;
+}
 
 #endif

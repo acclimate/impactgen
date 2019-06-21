@@ -33,7 +33,7 @@ AgentForcing::AgentForcing(const std::vector<std::string>& sectors_p, const std:
     for (std::size_t i = 0; i < regions_p.size(); ++i) {
         regions->emplace(regions_p[i], i);
     }
-    data = std::vector<ForcingType>(sectors->size() * regions->size(), 0);
+    data = std::vector<ForcingType>(sectors->size() * regions->size(), 1);
 }
 
 const std::unordered_map<std::string, std::size_t>& AgentForcing::get_sectors() const { return *sectors; }
