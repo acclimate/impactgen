@@ -129,7 +129,8 @@ std::size_t GeoGrid<T>::lon_index(T lon) const {
 
 template<typename T>
 template<typename V>
-nvector::View<V, 2> GeoGrid<T>::box(const nvector::View<V, 2>& view, T lat_min_p, T lat_max_p, T lon_min_p, T lon_max_p) const {
+nvector::View<V, 2> GeoGrid<T>::box(
+    const nvector::View<V, 2>& view, T lat_min_p, T lat_max_p, T lon_min_p, T lon_max_p, std::size_t max_lat_size, std::size_t max_lon_size) const {
     const auto& lat_slice = view.template slice<0>();
     const auto& lon_slice = view.template slice<1>();
     nvector::Slice new_lat_slice;
@@ -138,24 +139,24 @@ nvector::View<V, 2> GeoGrid<T>::box(const nvector::View<V, 2>& view, T lat_min_p
     const auto lat_min_index = lat_index(lat_min_p);
     const auto lat_max_index = lat_index(lat_max_p);
     if (lat_min_index > lat_max_index) {
-        new_lat_slice.begin = lat_slice.begin + lat_max_index * lat_slice.stride;
-        new_lat_slice.size = lat_min_index - lat_max_index;
-        new_lat_slice.stride = lat_slice.stride;
+        new_lat_slice.begin = -lat_slice.begin - lat_min_index;
+        new_lat_slice.size = std::min(lat_min_index - lat_max_index, max_lat_size);
+        new_lat_slice.stride = -lat_slice.stride;
     } else {
-        new_lat_slice.begin = lat_slice.begin + lat_min_index * lat_slice.stride;
-        new_lat_slice.size = lat_max_index - lat_min_index;
+        new_lat_slice.begin = lat_slice.begin + lat_min_index;
+        new_lat_slice.size = std::min(lat_max_index - lat_min_index, max_lat_size);
         new_lat_slice.stride = lat_slice.stride;
     }
 
     const auto lon_min_index = lon_index(lon_min_p);
     const auto lon_max_index = lon_index(lon_max_p);
     if (lon_min_index > lon_max_index) {
-        new_lon_slice.begin = lon_slice.begin + lon_max_index * lon_slice.stride;
-        new_lon_slice.size = lon_min_index - lon_max_index;
-        new_lon_slice.stride = lon_slice.stride;
+        new_lon_slice.begin = -lon_slice.begin - lon_min_index;
+        new_lon_slice.size = std::min(lon_min_index - lon_max_index, max_lon_size);
+        new_lon_slice.stride = -lon_slice.stride;
     } else {
-        new_lon_slice.begin = lon_slice.begin + lon_min_index * lon_slice.stride;
-        new_lon_slice.size = lon_max_index - lon_min_index;
+        new_lon_slice.begin = lon_slice.begin + lon_min_index;
+        new_lon_slice.size = std::min(lon_max_index - lon_min_index, max_lon_size);
         new_lon_slice.stride = lon_slice.stride;
     }
 
@@ -164,16 +165,47 @@ nvector::View<V, 2> GeoGrid<T>::box(const nvector::View<V, 2>& view, T lat_min_p
 
 template class GeoGrid<double>;
 template class GeoGrid<float>;
-template nvector::View<double, 2> GeoGrid<double>::box(
-    const nvector::View<double, 2>& view, double lat_min_p, double lat_max_p, double lon_min_p, double lon_max_p) const;
-template nvector::View<double, 2> GeoGrid<float>::box(
-    const nvector::View<double, 2>& view, float lat_min_p, float lat_max_p, float lon_min_p, float lon_max_p) const;
-template nvector::View<float, 2> GeoGrid<double>::box(
-    const nvector::View<float, 2>& view, double lat_min_p, double lat_max_p, double lon_min_p, double lon_max_p) const;
-template nvector::View<float, 2> GeoGrid<float>::box(
-    const nvector::View<float, 2>& view, float lat_min_p, float lat_max_p, float lon_min_p, float lon_max_p) const;
-template nvector::View<int, 2> GeoGrid<double>::box(
-    const nvector::View<int, 2>& view, double lat_min_p, double lat_max_p, double lon_min_p, double lon_max_p) const;
-template nvector::View<int, 2> GeoGrid<float>::box(const nvector::View<int, 2>& view, float lat_min_p, float lat_max_p, float lon_min_p, float lon_max_p) const;
+template nvector::View<double, 2> GeoGrid<double>::box(const nvector::View<double, 2>& view,
+                                                       double lat_min_p,
+                                                       double lat_max_p,
+                                                       double lon_min_p,
+                                                       double lon_max_p,
+                                                       std::size_t max_lat_size,
+                                                       std::size_t max_lon_size) const;
+template nvector::View<double, 2> GeoGrid<float>::box(const nvector::View<double, 2>& view,
+                                                      float lat_min_p,
+                                                      float lat_max_p,
+                                                      float lon_min_p,
+                                                      float lon_max_p,
+                                                      std::size_t max_lat_size,
+                                                      std::size_t max_lon_size) const;
+template nvector::View<float, 2> GeoGrid<double>::box(const nvector::View<float, 2>& view,
+                                                      double lat_min_p,
+                                                      double lat_max_p,
+                                                      double lon_min_p,
+                                                      double lon_max_p,
+                                                      std::size_t max_lat_size,
+                                                      std::size_t max_lon_size) const;
+template nvector::View<float, 2> GeoGrid<float>::box(const nvector::View<float, 2>& view,
+                                                     float lat_min_p,
+                                                     float lat_max_p,
+                                                     float lon_min_p,
+                                                     float lon_max_p,
+                                                     std::size_t max_lat_size,
+                                                     std::size_t max_lon_size) const;
+template nvector::View<int, 2> GeoGrid<double>::box(const nvector::View<int, 2>& view,
+                                                    double lat_min_p,
+                                                    double lat_max_p,
+                                                    double lon_min_p,
+                                                    double lon_max_p,
+                                                    std::size_t max_lat_size,
+                                                    std::size_t max_lon_size) const;
+template nvector::View<int, 2> GeoGrid<float>::box(const nvector::View<int, 2>& view,
+                                                   float lat_min_p,
+                                                   float lat_max_p,
+                                                   float lon_min_p,
+                                                   float lon_max_p,
+                                                   std::size_t max_lat_size,
+                                                   std::size_t max_lon_size) const;
 
 }  // namespace impactgen

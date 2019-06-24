@@ -54,7 +54,8 @@ struct GeoGrid {
     T operator/(const GeoGrid& other) const;
     bool is_compatible(const GeoGrid& other) const;
     template<typename V>
-    nvector::View<V, 2> box(const nvector::View<V, 2>& view, T lat_min_p, T lat_max_p, T lon_min_p, T lon_max_p) const;
+    nvector::View<V, 2> box(
+        const nvector::View<V, 2>& view, T lat_min_p, T lat_max_p, T lon_min_p, T lon_max_p, std::size_t max_lat_size, std::size_t max_lon_size) const;
 };
 
 template<typename Func, typename T>
@@ -84,11 +85,41 @@ struct GridView {
 
 template<typename... Args>
 inline auto common_grid_box(const Args&... grid_views) -> decltype(std::make_tuple(grid_views.data...)) {
-    const auto lat_min = reduce(min, grid_views.grid.lat_min...);
-    const auto lat_max = reduce(max, grid_views.grid.lat_max...);
-    const auto lon_min = reduce(min, grid_views.grid.lon_min...);
-    const auto lon_max = reduce(max, grid_views.grid.lon_max...);
-    return std::make_tuple(grid_views.grid.box(grid_views.data, lat_min, lat_max, lon_min, lon_max)...);
+    const auto lat_min = reduce(max<float>, grid_views.grid.lat_min...);
+    const auto lat_max = reduce(min<float>, grid_views.grid.lat_max...);
+    const auto lon_min = reduce(max<float>, grid_views.grid.lon_min...);
+    const auto lon_max = reduce(min<float>, grid_views.grid.lon_max...);
+    const auto max_lat_size =
+        reduce(min<int>, std::abs(static_cast<int>(grid_views.grid.lat_index(lat_min)) - static_cast<int>(grid_views.grid.lat_index(lat_max)))...);
+    const auto max_lon_size =
+        reduce(min<int>, std::abs(static_cast<int>(grid_views.grid.lon_index(lon_min)) - static_cast<int>(grid_views.grid.lon_index(lon_max)))...);
+    return std::make_tuple(grid_views.grid.box(grid_views.data, lat_min, lat_max, lon_min, lon_max, max_lat_size, max_lon_size)...);
+}
+
+template<typename V>
+inline void print_view(const nvector::View<V, 2>& view, const std::size_t width = 50) {
+    const auto& lat_slice = view.template slice<0>();
+    const auto& lon_slice = view.template slice<1>();
+    const std::size_t agg_size = lon_slice.size / width;
+    for (std::size_t lat_chunk = 0; lat_chunk < lat_slice.size; lat_chunk += agg_size) {
+        for (std::size_t lon_chunk = 0; lon_chunk < lon_slice.size; lon_chunk += agg_size) {
+            std::size_t count = 0;
+            for (std::size_t lat = lat_chunk; lat < std::min(lat_slice.size, lat_chunk + agg_size); ++lat) {
+                for (std::size_t lon = lon_chunk; lon < std::min(lon_slice.size, lon_chunk + agg_size); ++lon) {
+                    if (view(lat_slice.size - 1 - lat, lon) > 0) {
+                        ++count;
+                    }
+                }
+            }
+            if (5 * count > agg_size * agg_size) {
+                std::cout << 'x';
+            } else {
+                std::cout << ' ';
+            }
+        }
+        std::cout << '\n';
+    }
+    std::cout << std::flush;
 }
 
 }  // namespace impactgen
