@@ -233,7 +233,7 @@ struct Split<false, Args...> {
 };
 
 struct Slice {
-    std::size_t begin = 0;
+    int begin = 0;
     std::size_t size = 0;
     int stride = 1;
 };
