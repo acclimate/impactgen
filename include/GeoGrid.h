@@ -67,8 +67,14 @@ T reduce(const Func& f, T v1, T v2, Args... others) {
     return reduce(f, f(v1, v2), others...);
 }
 
-inline float max(float a, float b) { return a < b ? b : a; }
-inline float min(float a, float b) { return a > b ? b : a; }
+template<typename T>
+inline T max(T a, T b) {
+    return std::max(a, b);
+}
+template<typename T>
+inline T min(T a, T b) {
+    return std::min(a, b);
+}
 
 template<typename T>
 struct GridView {

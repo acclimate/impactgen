@@ -34,7 +34,6 @@ class Output;
 
 class Flooding : public AgentImpact, public ProxiedImpact, public Impact {
   protected:
-    std::size_t chunk_size;
     nvector::Vector<ForcingType, 2> last;
     GeoGrid<float> last_grid;
     ForcingType recovery_exponent;

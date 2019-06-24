@@ -56,6 +56,12 @@ static std::pair<std::time_t, std::size_t> parse_netcdf_format(const std::string
     return std::make_pair(-1, 0);
 }
 
+std::time_t ReferenceTime::year(int year_p) {
+    std::tm t = {};
+    t.tm_year = year_p;
+    return std::mktime(&t);
+}
+
 ReferenceTime::ReferenceTime(const std::string& netcdf_format) {
     auto p = parse_netcdf_format(netcdf_format);
     if (p.second == 0) {

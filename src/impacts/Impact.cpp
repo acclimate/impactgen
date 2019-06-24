@@ -28,6 +28,7 @@ namespace impactgen {
 Impact::Impact(const settings::SettingsNode& impact_node) {
     time_shift = impact_node["time_shift"].as<int>(0);
     verbose = impact_node["verbose"].as<bool>(false);
+    chunk_size = impact_node["chunk_size"].as<std::size_t>(1);
 }
 
 }  // namespace impactgen

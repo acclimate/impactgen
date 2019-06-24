@@ -36,7 +36,6 @@ namespace impactgen {
 
 Flooding::Flooding(const settings::SettingsNode& impact_node, AgentForcing base_forcing_p)
     : AgentImpact(std::move(base_forcing_p)), ProxiedImpact(impact_node["proxy"]), Impact(impact_node) {
-    chunk_size = impact_node["chunk_size"].as<std::size_t>(10);
     forcing_filename = impact_node["flood_fraction"]["file"].as<std::string>();
     forcing_varname = impact_node["flood_fraction"]["variable"].as<std::string>();
     if (impact_node.has("recovery")) {
@@ -70,17 +69,17 @@ void Flooding::join(Output& output, const TemplateFunction& template_func) {
     GeoGrid<float> forcing_grid;
     forcing_grid.read_from_netcdf(forcing_file, filename);
     if (!isoraster_grid.is_compatible(forcing_grid)) {
-        throw std::runtime_error("Forcing and ISO raster not compatible in raster resolution");
+        throw std::runtime_error(filename + ": Forcing and ISO raster not compatible in raster resolution");
     }
 
     read_proxy(fill_template(proxy_filename, template_func), output.get_regions());
 
-    auto forcing_series = ForcingSeries<AgentForcing>(base_forcing, time_variable.ref());
+    auto forcing_series = ForcingSeries<AgentForcing>(base_forcing, output.ref());
     nvector::Vector<ForcingType, 2> current(0, forcing_grid.lat_count, forcing_grid.lon_count);
     if (last.data().size() == 0) {
         last.resize(0, forcing_grid.lat_count, forcing_grid.lon_count);
     } else if (!forcing_grid.is_compatible(last_grid) || forcing_grid.size() != last_grid.size()) {
-        throw std::runtime_error("Incompatible grids");
+        throw std::runtime_error(filename + ": Incompatible grids");
     }
     std::size_t chunk_pos = chunk_size;
     std::vector<ForcingType> chunk_buffer(chunk_size * forcing_grid.size());
@@ -90,7 +89,7 @@ void Flooding::join(Output& output, const TemplateFunction& template_func) {
         if (chunk_pos == chunk_size) {
             forcing_variable.getVar(
                 {t, 0, 0},
-                {t > time_variable.times.size() - chunk_size ? time_variable.times.size() - t : chunk_size, forcing_grid.lat_count, forcing_grid.lon_count},
+                {t + chunk_size > time_variable.times.size() ? time_variable.times.size() - t : chunk_size, forcing_grid.lat_count, forcing_grid.lon_count},
                 &chunk_buffer[0]);
             chunk_pos = 0;
         }
@@ -102,7 +101,11 @@ void Flooding::join(Output& output, const TemplateFunction& template_func) {
                               [&](std::size_t lat_index, std::size_t lon_index, int i, ForcingType proxy_value, ForcingType forcing_v, ForcingType& last_v) {
                                   (void)lat_index;
                                   (void)lon_index;
-                                  if (forcing_v > 1e10 || proxy_value <= 0 || i < 0 || std::isnan(forcing_v) || std::isnan(proxy_value)) {
+                                  if (proxy_value <= 0 || i < 0 || std::isnan(proxy_value)) {
+                                      return true;
+                                  }
+                                  if (forcing_v > 1e10 || std::isnan(forcing_v)) {
+                                      region_forcing[i] += proxy_value;
                                       return true;
                                   }
                                   auto rec = recovery_exponent * last_v;

@@ -32,6 +32,9 @@ TimeVariable::TimeVariable(const netCDF::NcFile& file, const std::string& filena
     if (time_variable.isNull() || time_dimension.isNull()) {
         throw std::runtime_error(filename + ": No time information found");
     }
+    if (!check_dimensions(time_variable, {"time"})) {
+        throw std::runtime_error(filename + " - time: Unexpected dimensions");
+    }
     std::string time_units;
     time_variable.getAtt("units").getValues(time_units);
     reference_time = ReferenceTime(time_units);

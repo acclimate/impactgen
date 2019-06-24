@@ -65,7 +65,7 @@ class ForcingSeries {
     }
 
     void include(const ForcingSeries<Forcing>& other, ForcingCombination combination) {
-        if (reference_time.compatible_with(other.reference_time)) {
+        if (!reference_time.compatible_with(other.reference_time)) {
             throw std::runtime_error("Incompatible accuracies");
         }
         for (const auto& other_forcing : other.data) {

@@ -50,6 +50,7 @@ class Output {
 
   public:
     explicit Output(const settings::SettingsNode& settings);
+    const ReferenceTime& ref() const { return reference_time; }
     const std::vector<std::string>& get_regions() const { return regions; }
     void add_regions(const settings::SettingsNode& regions_node);
     void add_sectors(const settings::SettingsNode& sectors_node);

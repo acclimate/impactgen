@@ -101,7 +101,12 @@ bool GeoGrid<T>::is_compatible(const GeoGrid<T>& other) const {
 
 template<typename T>
 std::size_t GeoGrid<T>::lat_index(T lat) const {
-    const auto res = (lat - lat_min) * lat_count / (lat_max - lat_min + lat_stepsize);
+    T res;
+    if (lat_stepsize < 0) {
+        res = (lat_max - lat) * lat_count / (lat_max - lat_min - lat_stepsize);
+    } else {
+        res = (lat - lat_min) * lat_count / (lat_max - lat_min + lat_stepsize);
+    }
     if (res < 0 || res >= lat_count) {
         return std::numeric_limits<std::size_t>::quiet_NaN();
     }
@@ -110,7 +115,12 @@ std::size_t GeoGrid<T>::lat_index(T lat) const {
 
 template<typename T>
 std::size_t GeoGrid<T>::lon_index(T lon) const {
-    const auto res = (lon - lon_min) * lon_count / (lon_max - lon_min + lon_stepsize);
+    T res;
+    if (lon_stepsize < 0) {
+        res = (lon_max - lon) * lon_count / (lon_max - lon_min - lon_stepsize);
+    } else {
+        res = (lon - lon_min) * lon_count / (lon_max - lon_min + lon_stepsize);
+    }
     if (res < 0 || res >= lon_count) {
         return std::numeric_limits<std::size_t>::quiet_NaN();
     }

@@ -32,6 +32,7 @@ class Impact {
   protected:
     bool verbose;
     int time_shift;
+    std::size_t chunk_size;
 
     Impact(const settings::SettingsNode& impact_node);
 

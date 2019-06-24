@@ -83,6 +83,8 @@ void ProxiedImpact::read_proxy(const std::string& filename, const std::vector<st
                 const auto total_proxy_value = total_proxy[i];
                 if (total_proxy_value <= 0) {
                     std::cerr << "Warning: " << all_regions[region] << " has zero proxy" << std::endl;
+                } else {
+                    std::cout << all_regions[region] << ": " << total_proxy_value << std::endl;
                 }
             }
         }
