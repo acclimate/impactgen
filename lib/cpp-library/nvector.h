@@ -409,6 +409,20 @@ class View {
     }
 
     template<std::size_t c, typename... Args>
+    inline const Tref at_(std::size_t index, const std::size_t& i, Args&&... args) const {
+        if (i >= std::get<c>(dims).size) {
+            throw std::out_of_range("index out of bounds");
+        }
+        return at_<c + 1>(index + (i + std::get<c>(dims).begin) * std::get<c>(dims).stride, std::forward<Args>(args)...);
+    }
+
+    template<std::size_t c>
+    inline const Tref at_(std::size_t index) const {
+        static_assert(c == dim, "wrong number of arguments");
+        return it[index];
+    }
+
+    template<std::size_t c, typename... Args>
     inline void initialize_slices(const Slice& i, Args&&... args) {
         std::get<c>(dims) = i;
         initialize_slices<c + 1>(std::forward<Args>(args)...);
@@ -565,6 +579,11 @@ class View {
 
     template<typename... Args>
     inline Tref at(Args&&... args) {
+        return at_<0>(0, std::forward<Args>(args)...);
+    }
+
+    template<typename... Args>
+    inline const Tref at(Args&&... args) const {
         return at_<0>(0, std::forward<Args>(args)...);
     }
 
