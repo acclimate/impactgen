@@ -68,30 +68,44 @@ static void run(const settings::SettingsNode& settings) {
                 throw std::runtime_error("Unsupported impact type '" + std::string(type) + "'");
         }
         std::size_t combination_count = 1;
-        std::unordered_map<std::string, std::tuple<int, int, int>> variables;
+        std::unordered_map<std::string, std::tuple<int, int, int>> range_variables;
+        std::unordered_map<std::string, std::tuple<int, std::vector<std::string>>> sequence_variables;
         if (impact_node.has("variables")) {
             for (const auto& var : impact_node["variables"].as_map()) {
-                const auto min_value = var.second["from"].as<int>();
-                const auto max_value = var.second["to"].as<int>();
-                if (min_value > max_value) {
-                    throw std::runtime_error(var.first + ": 'from' value should be less than 'to' value");
+                if (var.second.is_sequence()) {
+                    const auto seq = var.second.as_sequence();
+                    std::vector<std::string> seq_values;
+                    std::transform(std::begin(seq), std::end(seq), std::back_inserter(seq_values),
+                                   [](const settings::SettingsNode& n) { return n.as<std::string>(); });
+                    combination_count *= seq_values.size();
+                    sequence_variables[var.first] = std::make_tuple(0, seq_values);
+                } else {
+                    const auto min_value = var.second["from"].as<int>();
+                    const auto max_value = var.second["to"].as<int>();
+                    if (min_value > max_value) {
+                        throw std::runtime_error(var.first + ": 'from' value should be less than 'to' value");
+                    }
+                    combination_count *= (max_value - min_value + 1);
+                    range_variables[var.first] = std::make_tuple(min_value, min_value, max_value);
                 }
-                variables[var.first] = std::make_tuple(min_value, min_value, max_value);
-                combination_count *= (max_value - min_value + 1);
             }
         }
         progressbar::ProgressBar impact_bar(combination_count, impact_name, true);
         bool loop = true;
         while (loop) {
             impact->join(output, [&](const std::string& key, const std::string& temp) -> std::string {
-                const auto& value = variables.find(key);
-                if (value == std::end(variables)) {
-                    throw std::runtime_error("Variable '" + key + "' not found for '" + temp + "'");
+                const auto& value = range_variables.find(key);
+                if (value == std::end(range_variables)) {
+                    const auto& seq = sequence_variables.find(key);
+                    if (seq == std::end(sequence_variables)) {
+                        throw std::runtime_error("Variable '" + key + "' not found for '" + temp + "'");
+                    }
+                    return std::get<1>(seq->second)[std::get<0>(seq->second)];
                 }
                 return std::to_string(std::get<0>(value->second));
             });
             loop = false;
-            for (auto& var : variables) {
+            for (auto& var : range_variables) {
                 auto& current_value = std::get<0>(var.second);
                 const auto max_value = std::get<2>(var.second);
                 if (current_value < max_value) {
@@ -101,6 +115,18 @@ static void run(const settings::SettingsNode& settings) {
                 }
                 const auto min_value = std::get<1>(var.second);
                 current_value = min_value;
+            }
+            if (!loop) {
+                for (auto& var : sequence_variables) {
+                    auto& current_index = std::get<0>(var.second);
+                    const auto& seq = std::get<1>(var.second);
+                    if (current_index < seq.size() - 1) {
+                        ++current_index;
+                        loop = true;
+                        break;
+                    }
+                    current_index = 0;
+                }
             }
             ++impact_bar;
         }
