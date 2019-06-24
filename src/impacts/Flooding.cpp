@@ -75,7 +75,6 @@ void Flooding::join(Output& output, const TemplateFunction& template_func) {
     read_proxy(fill_template(proxy_filename, template_func), output.get_regions());
 
     auto forcing_series = ForcingSeries<AgentForcing>(base_forcing, output.ref());
-    nvector::Vector<ForcingType, 2> current(0, forcing_grid.lat_count, forcing_grid.lon_count);
     if (last.data().size() == 0) {
         last.resize(0, forcing_grid.lat_count, forcing_grid.lon_count);
     } else if (!forcing_grid.is_compatible(last_grid) || forcing_grid.size() != last_grid.size()) {
@@ -93,11 +92,13 @@ void Flooding::join(Output& output, const TemplateFunction& template_func) {
                 &chunk_buffer[0]);
             chunk_pos = 0;
         }
-        std::copy_n(std::begin(chunk_buffer) + chunk_pos * forcing_grid.size(), forcing_grid.size(), std::begin(current.data()));
+        nvector::View<ForcingType, 2> forcing_values(
+            std::begin(chunk_buffer) + chunk_pos * forcing_grid.size(),
+            {nvector::Slice{0, forcing_grid.lat_count, static_cast<int>(forcing_grid.lon_count)}, nvector::Slice{0, forcing_grid.lon_count, 1}});
         ++chunk_pos;
         std::fill(std::begin(region_forcing), std::end(region_forcing), 0);
         nvector::foreach_view(common_grid_box(GridView<int>{isoraster, isoraster_grid}, GridView<ForcingType>{proxy_values, proxy_grid},
-                                              GridView<ForcingType>{current, forcing_grid}, GridView<ForcingType>{last, forcing_grid}),
+                                              GridView<ForcingType>{forcing_values, forcing_grid}, GridView<ForcingType>{last, forcing_grid}),
                               [&](std::size_t lat_index, std::size_t lon_index, int i, ForcingType proxy_value, ForcingType forcing_v, ForcingType& last_v) {
                                   (void)lat_index;
                                   (void)lon_index;
