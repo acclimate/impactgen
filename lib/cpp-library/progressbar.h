@@ -56,6 +56,7 @@ class ProgressBar {
     std::FILE* out;
 
     void update(std::size_t n) noexcept {
+#ifndef PROGRESSBAR_SILENT
         current = std::min(current + n, total);
         if (current >= reprint_next) {
             std::lock_guard<std::mutex> guard(mutex_m);
@@ -63,6 +64,7 @@ class ProgressBar {
                 recalc_and_print();
             }
         }
+#endif
     }
 
     void recalc_and_print(bool force = false) noexcept {
@@ -259,10 +261,12 @@ class ProgressBar {
         if (!is_tty) {
             buf.resize(65);
         }
+#ifndef PROGRESSBAR_SILENT
         if (subbar) {
             fputc(ENDL, out);
         }
         print_bar(0, 0, 0, false);
+#endif
     }
     ~ProgressBar() noexcept { close(); }
 
@@ -295,6 +299,7 @@ class ProgressBar {
             auto total_duration = (std::chrono::steady_clock::now() - start_time).count();
             auto freq = current * std::chrono::steady_clock::period::den / static_cast<float>(total_duration * std::chrono::steady_clock::period::num);
             current = total;
+#ifndef PROGRESSBAR_SILENT
             if (remove && is_tty) {
                 fputc(GO_TO_BOL, out);
                 fputs(CLEAR_TO_EOL, out);
@@ -307,6 +312,7 @@ class ProgressBar {
                     fputc(ENDL, out);
                 }
             }
+#endif
             closed = true;
         }
     }

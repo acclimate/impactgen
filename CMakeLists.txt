@@ -48,6 +48,11 @@ if(IMPACTGEN_PARALLELIZATION)
   set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} ${OpenMP_CXX_FLAGS}")
 endif()
 
+option(IMPACTGEN_PROGRESSBARS_SILENT "" OFF)
+if(IMPACTGEN_PROGRESSBARS_SILENT)
+  target_compile_definitions(impactgen PUBLIC PROGRESSBAR_SILENT)
+endif()
+
 include_netcdf_cxx4(impactgen ON v4.3.0)
 
 include(lib/settingsnode/settingsnode.cmake)
