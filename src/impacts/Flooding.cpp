@@ -97,8 +97,9 @@ void Flooding::join(Output& output, const TemplateFunction& template_func) {
             {nvector::Slice{0, forcing_grid.lat_count, static_cast<int>(forcing_grid.lon_count)}, nvector::Slice{0, forcing_grid.lon_count, 1}});
         ++chunk_pos;
         std::fill(std::begin(region_forcing), std::end(region_forcing), 0);
-        nvector::foreach_view(common_grid_box(GridView<int>{isoraster, isoraster_grid}, GridView<ForcingType>{proxy_values, proxy_grid},
-                                              GridView<ForcingType>{forcing_values, forcing_grid}, GridView<ForcingType>{last, forcing_grid}),
+        GeoGrid<float> common_grid;
+        nvector::foreach_view(common_grid_view(common_grid, GridView<int>{isoraster, isoraster_grid}, GridView<ForcingType>{proxy_values, proxy_grid},
+                                               GridView<ForcingType>{forcing_values, forcing_grid}, GridView<ForcingType>{last, forcing_grid}),
                               [&](std::size_t lat_index, std::size_t lon_index, int i, ForcingType proxy_value, ForcingType forcing_v, ForcingType& last_v) {
                                   (void)lat_index;
                                   (void)lon_index;

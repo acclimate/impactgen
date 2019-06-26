@@ -58,7 +58,8 @@ void ProxiedImpact::read_proxy(const std::string& filename, const std::vector<st
         ForcingType total_proxy_sum = 0.0;
         ForcingType total_proxy_sum_all = 0.0;
 
-        nvector::foreach_view(common_grid_box(GridView<int>{isoraster, isoraster_grid}, GridView<ForcingType>{proxy_values, proxy_grid}),
+        GeoGrid<float> common_grid;
+        nvector::foreach_view(common_grid_view(common_grid, GridView<int>{isoraster, isoraster_grid}, GridView<ForcingType>{proxy_values, proxy_grid}),
                               [&](std::size_t lat_index, std::size_t lon_index, int i, ForcingType v) {
                                   (void)lat_index;
                                   (void)lon_index;

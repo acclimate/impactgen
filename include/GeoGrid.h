@@ -77,23 +77,39 @@ inline T min(T a, T b) {
     return std::min(a, b);
 }
 
-template<typename T>
+template<typename V, typename T = float>
 struct GridView {
-    nvector::View<T, 2>& data;
-    GeoGrid<float>& grid;
+    nvector::View<V, 2>& data;
+    GeoGrid<T>& grid;
 };
 
-template<typename... Args>
-inline auto common_grid_box(const Args&... grid_views) -> decltype(std::make_tuple(grid_views.data...)) {
-    const auto lat_min = reduce(max<float>, grid_views.grid.lat_min...);
-    const auto lat_max = reduce(min<float>, grid_views.grid.lat_max...);
-    const auto lon_min = reduce(max<float>, grid_views.grid.lon_min...);
-    const auto lon_max = reduce(min<float>, grid_views.grid.lon_max...);
-    const auto max_lat_size =
-        reduce(min<int>, std::abs(static_cast<int>(grid_views.grid.lat_index(lat_min)) - static_cast<int>(grid_views.grid.lat_index(lat_max)))...);
-    const auto max_lon_size =
-        reduce(min<int>, std::abs(static_cast<int>(grid_views.grid.lon_index(lon_min)) - static_cast<int>(grid_views.grid.lon_index(lon_max)))...);
-    return std::make_tuple(grid_views.grid.box(grid_views.data, lat_min, lat_max, lon_min, lon_max, max_lat_size, max_lon_size)...);
+template<typename T, typename... Args>
+inline bool all_compatible(const GeoGrid<T>& grid1, const GeoGrid<T>& grid2) {
+    return grid1.is_compatible(grid2);
+}
+
+template<typename T, typename... Args>
+inline bool all_compatible(const GeoGrid<T>& grid1, const GeoGrid<T>& grid2, const Args&... grids) {
+    return grid1.is_compatible(grid2) && all_compatible(grid2, grids...);
+}
+
+template<typename T, typename... Args>
+inline auto common_grid_view(GeoGrid<T>& common_grid, const Args&... grid_views) -> decltype(std::make_tuple(grid_views.data...)) {
+    common_grid.lat_min = reduce(max<T>, grid_views.grid.lat_min...);
+    common_grid.lat_max = reduce(min<T>, grid_views.grid.lat_max...);
+    common_grid.lon_min = reduce(max<T>, grid_views.grid.lon_min...);
+    common_grid.lon_max = reduce(min<T>, grid_views.grid.lon_max...);
+    common_grid.lat_count = reduce(min<long>, std::abs(static_cast<long>(grid_views.grid.lat_index(common_grid.lat_min))
+                                                       - static_cast<long>(grid_views.grid.lat_index(common_grid.lat_max)))...);
+    common_grid.lon_count = reduce(min<long>, std::abs(static_cast<long>(grid_views.grid.lon_index(common_grid.lon_min))
+                                                       - static_cast<long>(grid_views.grid.lon_index(common_grid.lon_max)))...);
+    common_grid.lat_stepsize = common_grid.lat_abs_stepsize = std::get<0>(std::make_tuple(grid_views.grid...)).lat_abs_stepsize;
+    common_grid.lon_stepsize = common_grid.lon_abs_stepsize = std::get<0>(std::make_tuple(grid_views.grid...)).lon_abs_stepsize;
+    if (!all_compatible(grid_views.grid...)) {
+        throw std::runtime_error("Grid sizes do not match");
+    }
+    return std::make_tuple(grid_views.grid.box(grid_views.data, common_grid.lat_min, common_grid.lat_max, common_grid.lon_min, common_grid.lon_max,
+                                               common_grid.lat_count, common_grid.lon_count)...);
 }
 
 template<typename V>
