@@ -51,6 +51,24 @@ class ForcingSeries {
         return data.emplace(t, Forcing(base_forcing)).first->second;
     }
 
+    void insert_forcing(std::time_t time, Forcing forcing) {
+        const auto t = reference_time.reference(time);
+        if (data.find(t) != std::end(data)) {
+            throw std::runtime_error("Time already set");
+        }
+        data.emplace(t, forcing);
+    }
+
+    void insert_forcing(std::time_t time, Forcing forcing, ForcingCombination combination) {
+        const auto t = reference_time.reference(time);
+        auto f = data.find(t);
+        if (f != std::end(data)) {
+            f->second.include(forcing, combination);
+        } else {
+            data.emplace(t, forcing);
+        }
+    }
+
     Forcing& get_forcing(std::time_t time) { return data.at(reference_time.reference(time)); }
 
     std::vector<std::time_t> get_sorted_times() const {

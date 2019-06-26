@@ -21,6 +21,7 @@
 #ifndef IMPACTGEN_TROPICAL_CYCLONES_H
 #define IMPACTGEN_TROPICAL_CYCLONES_H
 
+#include <random>
 #include <string>
 #include "impacts/AgentImpact.h"
 #include "impacts/Impact.h"
@@ -35,6 +36,15 @@ class TropicalCyclones : public AgentImpact, public ProxiedImpact, public Impact
   protected:
     std::string forcing_filename;
     std::string forcing_varname;
+    std::string events_varname;
+    std::string basin;
+    int year_from;
+    int year_to;
+    std::size_t realization;
+    float threshold;
+    float velocity;
+    std::mt19937 random_generator;
+    std::unordered_map<std::string, std::pair<int, int>> seasons;
 
   public:
     TropicalCyclones(const settings::SettingsNode& impact_node, AgentForcing base_forcing_p);
