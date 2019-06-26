@@ -103,11 +103,7 @@ void Flooding::join(Output& output, const TemplateFunction& template_func) {
                               [&](std::size_t lat_index, std::size_t lon_index, int i, ForcingType proxy_value, ForcingType forcing_v, ForcingType& last_v) {
                                   (void)lat_index;
                                   (void)lon_index;
-                                  if (proxy_value <= 0 || i < 0 || std::isnan(proxy_value)) {
-                                      return true;
-                                  }
-                                  if (forcing_v > 1e10 || std::isnan(forcing_v)) {
-                                      region_forcing[i] += proxy_value;
+                                  if (forcing_v > 1e10 || proxy_value <= 0 || i < 0 || std::isnan(forcing_v) || std::isnan(proxy_value)) {
                                       return true;
                                   }
                                   auto rec = recovery_exponent * last_v;
@@ -115,7 +111,7 @@ void Flooding::join(Output& output, const TemplateFunction& template_func) {
                                       rec = 0;
                                   }
                                   const auto v = std::min(forcing_v + rec, ForcingType(1.0));
-                                  region_forcing[i] += (1 - v) * proxy_value;
+                                  region_forcing[i] += v * proxy_value;
                                   last_v = v;
                                   return true;
                               });
@@ -131,7 +127,7 @@ void Flooding::join(Output& output, const TemplateFunction& template_func) {
             }
             const auto r = region_forcing[i];
             for (const auto sector : sectors) {
-                forcing(sector, region) = r / total_proxy_value;
+                forcing(sector, region) = (total_proxy_value - r) / total_proxy_value;
             }
         }
         ++time_bar;
