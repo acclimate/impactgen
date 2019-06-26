@@ -34,7 +34,7 @@ class Impact {
     int time_shift;
     std::size_t chunk_size;
 
-    Impact(const settings::SettingsNode& impact_node);
+    explicit Impact(const settings::SettingsNode& impact_node);
 
   public:
     virtual void join(Output& output, const TemplateFunction& template_func) = 0;

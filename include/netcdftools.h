@@ -44,7 +44,7 @@ inline bool check_dimensions(const netCDF::NcVar& var, const std::vector<std::st
     if (dims.size() != names.size()) {
         return false;
     }
-    for (int i = 0; i < names.size(); ++i) {
+    for (std::size_t i = 0; i < names.size(); ++i) {
         if (dims[i].getName() != names[i]) {
             return false;
         }

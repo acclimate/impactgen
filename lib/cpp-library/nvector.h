@@ -511,7 +511,6 @@ class View {
     using split_type = View<T, inner_dim, Iterator, Tref>;
 
     View(){};
-    View(View&) = delete;
     View(const View&) = delete;
     View(View&&) = default;
     View(Iterator it_p, std::array<Slice, dim> dims_p) : it(std::move(it_p)), dims(std::move(dims_p)){};

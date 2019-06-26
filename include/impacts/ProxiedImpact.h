@@ -40,7 +40,7 @@ class ProxiedImpact : public GriddedImpact {
     std::vector<ForcingType> total_proxy;
     nvector::Vector<ForcingType, 2> proxy_values;
 
-    ProxiedImpact(const settings::SettingsNode& proxy_node);
+    explicit ProxiedImpact(const settings::SettingsNode& proxy_node);
     void read_proxy(const std::string& filename, const std::vector<std::string>& all_regions);
 };
 

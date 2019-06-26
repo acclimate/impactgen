@@ -69,7 +69,7 @@ static void run(const settings::SettingsNode& settings) {
         }
         std::size_t combination_count = 1;
         std::unordered_map<std::string, std::tuple<int, int, int>> range_variables;
-        std::unordered_map<std::string, std::tuple<int, std::vector<std::string>>> sequence_variables;
+        std::unordered_map<std::string, std::tuple<std::size_t, std::vector<std::string>>> sequence_variables;
         if (impact_node.has("variables")) {
             for (const auto& var : impact_node["variables"].as_map()) {
                 if (var.second.is_sequence()) {

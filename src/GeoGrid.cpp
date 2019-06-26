@@ -48,7 +48,7 @@ void GeoGrid<T>::read_from_netcdf(const netCDF::NcFile& file, const std::string&
         const auto lat_start = values[0];
         const auto lat_stop = values[lat_count - 1];
         lat_stepsize = values[1] - lat_start;
-        for (int i = 2; i < lat_count; ++i) {
+        for (std::size_t i = 2; i < lat_count; ++i) {
             if (std::abs((values[i] - values[i - 1] - lat_stepsize) / lat_stepsize) > 1e-2) {
                 throw std::runtime_error(filename + ": No gaps in latitude values supported");
             }
@@ -77,7 +77,7 @@ void GeoGrid<T>::read_from_netcdf(const netCDF::NcFile& file, const std::string&
         const auto lon_start = values[0];
         const auto lon_stop = values[lon_count - 1];
         lon_stepsize = values[1] - lon_start;
-        for (int i = 2; i < lon_count; ++i) {
+        for (std::size_t i = 2; i < lon_count; ++i) {
             if (std::abs((values[i] - values[i - 1] - lon_stepsize) / lon_stepsize) > 1e-2) {
                 throw std::runtime_error(filename + ": No gaps in longitude values supported");
             }
