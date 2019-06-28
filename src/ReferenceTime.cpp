@@ -26,7 +26,7 @@
 
 namespace impactgen {
 
-static std::pair<std::time_t, std::size_t> parse_netcdf_format(const std::string& netcdf_format) {
+static std::pair<std::time_t, int> parse_netcdf_format(const std::string& netcdf_format) {
     std::tm res = {};
     std::istringstream ss(netcdf_format);
     ss >> std::get_time(&res, "days since %Y-%m-%d");
@@ -58,7 +58,7 @@ static std::pair<std::time_t, std::size_t> parse_netcdf_format(const std::string
 
 std::time_t ReferenceTime::year(int year_p) {
     std::tm t = {};
-    t.tm_year = year_p;
+    t.tm_year = year_p - 1900;
     return std::mktime(&t);
 }
 

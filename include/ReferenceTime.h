@@ -29,10 +29,10 @@ namespace impactgen {
 class ReferenceTime {
   protected:
     std::time_t time;
-    std::size_t accuracy;
+    int accuracy;
 
   public:
-    explicit ReferenceTime(std::time_t time_p = -1, std::size_t accuracy_p = 1) : time(time_p), accuracy(accuracy_p) {}
+    explicit ReferenceTime(std::time_t time_p = -1, int accuracy_p = 1) : time(time_p), accuracy(accuracy_p) {}
     explicit ReferenceTime(const std::string& netcdf_format);
     static std::time_t year(int year_p);
     std::string to_netcdf_format() const;
