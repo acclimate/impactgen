@@ -53,7 +53,8 @@ void ProxiedImpact::read_proxy(const std::string& filename, const std::vector<st
         throw std::runtime_error("Forcing and proxy not compatible in raster resolution");
     }
 
-    total_proxy.resize(regions.size(), 0);
+    total_proxy.resize(regions.size());
+    std::fill(std::begin(total_proxy), std::end(total_proxy), 0);  // reset proxy (cannot do with resize if called a second time)
     {
         ForcingType total_proxy_sum = 0.0;
         ForcingType total_proxy_sum_all = 0.0;

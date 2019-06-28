@@ -77,7 +77,7 @@ void Flooding::join(Output& output, const TemplateFunction& template_func) {
     auto forcing_series = ForcingSeries<AgentForcing>(base_forcing, output.ref());
     if (last.data().size() == 0) {
         last.resize(0, forcing_grid.lat_count, forcing_grid.lon_count);
-    } else if (!forcing_grid.is_compatible(last_grid) || forcing_grid.size() != last_grid.size()) {
+    } else if (!forcing_grid.is_compatible(last_grid) || forcing_grid.lat_count != last_grid.lat_count || forcing_grid.lon_count != last_grid.lon_count) {
         throw std::runtime_error(filename + ": Incompatible grids");
     }
     std::size_t chunk_pos = chunk_size;

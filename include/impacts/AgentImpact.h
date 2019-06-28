@@ -31,7 +31,7 @@ namespace impactgen {
 class AgentImpact {
   protected:
     std::vector<int> sectors;
-    AgentForcing base_forcing;
+    const AgentForcing base_forcing;
 
     explicit AgentImpact(AgentForcing base_forcing_p) : base_forcing(std::move(base_forcing_p)) {}
     void read_sectors(const settings::SettingsNode& impact_node);
