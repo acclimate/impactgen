@@ -27,6 +27,7 @@
 #include "Output.h"
 #include "helpers.h"
 #include "impacts/Flooding.h"
+#include "impacts/HeatLaborProductivity.h"
 #include "impacts/TropicalCyclones.h"
 #include "progressbar.h"
 #include "settingsnode.h"
@@ -54,7 +55,7 @@ static void run(const settings::SettingsNode& settings) {
         const auto& type = impact_node["type"].as<settings::hstring>();
         switch (type) {
             // TODO event_series
-            // TODO heat_labor_productivity
+            // TODO passage shocks
             // TODO shock
             case settings::hstring::hash("flooding"):
                 impact = std::make_unique<impactgen::Flooding>(impact_node, output.prepare_forcing());
@@ -63,6 +64,10 @@ static void run(const settings::SettingsNode& settings) {
             case settings::hstring::hash("tropical_cyclones"):
                 impact = std::make_unique<impactgen::TropicalCyclones>(impact_node, output.prepare_forcing());
                 impact_name = "Tropical Cyclones";
+                break;
+            case settings::hstring::hash("heat_labor_productivity"):
+                impact = std::make_unique<impactgen::HeatLaborProductivity>(impact_node, output.prepare_forcing());
+                impact_name = "Heat Labor Productivity";
                 break;
             default:
                 throw std::runtime_error("Unsupported impact type '" + std::string(type) + "'");
