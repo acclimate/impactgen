@@ -103,7 +103,8 @@ static void run(const settings::SettingsNode& settings) {
                 if (value == std::end(range_variables)) {
                     const auto& seq = sequence_variables.find(key);
                     if (seq == std::end(sequence_variables)) {
-                        throw std::runtime_error("Variable '" + key + "' not found for '" + temp + "'");
+                        throw std::runtime_error("Variable '" + key + "' not found for '" + temp  // NOLINT(performance-inefficient-string-concatenation)
+                                                 + "'");
                     }
                     return std::get<1>(seq->second)[std::get<0>(seq->second)];
                 }
@@ -186,13 +187,13 @@ int main(int argc, char* argv[]) {
 #endif
             if (arg == "-") {
                 std::cin >> std::noskipws;
-                run(settings::SettingsNode(std::unique_ptr<settings::YAML>(new settings::YAML(std::cin))));
+                run(settings::SettingsNode(std::make_unique<settings::YAML>(std::cin)));
             } else {
                 std::ifstream settings_file(arg);
                 if (!settings_file) {
                     throw std::runtime_error("Cannot open " + arg);
                 }
-                run(settings::SettingsNode(std::unique_ptr<settings::YAML>(new settings::YAML(settings_file))));
+                run(settings::SettingsNode(std::make_unique<settings::YAML>(settings_file)));
             }
 #ifndef DEBUG
         } catch (std::runtime_error& ex) {

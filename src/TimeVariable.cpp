@@ -44,8 +44,7 @@ TimeVariable::TimeVariable(const netCDF::NcFile& file, const std::string& filena
     std::transform(std::begin(tmp), std::end(tmp), std::begin(times), [&](int t) -> std::time_t { return reference_time.unreference(t + time_shift); });
 }
 
-TimeVariable::TimeVariable(std::vector<std::time_t> times_p, ReferenceTime reference_time_p)
-    : reference_time(std::move(reference_time_p)), times(std::move(times_p)) {}
+TimeVariable::TimeVariable(std::vector<std::time_t> times_p, ReferenceTime reference_time_p) : reference_time(reference_time_p), times(std::move(times_p)) {}
 
 void TimeVariable::write_to_file(const netCDF::NcFile& file, const ReferenceTime& reference_time) {
     const auto time_dimension = file.addDim("time", times.size());

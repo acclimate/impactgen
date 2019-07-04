@@ -39,13 +39,16 @@ static const std::array<int, 13> cumulative_days_per_month = {0, 31, 59, 90, 120
 template<typename T>
 inline T distance(T lon1, T lat1, T lon2, T lat2) {
     static constexpr T r = 6371;
-    static constexpr T pi = std::acos(-1);
+    static const T pi = std::acos(-1);
     const T sqrt_hav_lat = std::sin((lat1 - lat2) / 2 * pi / 180);
     const T sqrt_hav_lon = std::sin((lon1 - lon2) / 2 * pi / 180);
     return 2 * r * std::asin(std::sqrt(sqrt_hav_lat * sqrt_hav_lat + std::cos(lat1 * pi / 180) * std::cos(lat2 * pi / 180) * sqrt_hav_lon * sqrt_hav_lon));
 }
 
-TropicalCyclones::TropicalCyclones(const settings::SettingsNode& impact_node, AgentForcing base_forcing_p)
+TropicalCyclones::TropicalCyclones(  // NOLINT(cert-msc32-c,cert-msc51-cpp) [repress warning: random number generator seeded with a default argument will
+                                     // generate a predictable sequence of values]
+    const settings::SettingsNode& impact_node,
+    AgentForcing base_forcing_p)
     : AgentImpact(std::move(base_forcing_p)), ProxiedImpact(impact_node["proxy"]), Impact(impact_node) {
     forcing_filename = impact_node["wind_speed"]["file"].as<std::string>();
     forcing_varname = impact_node["wind_speed"]["variable"].as<std::string>();
@@ -127,7 +130,7 @@ void TropicalCyclones::join(Output& output, const TemplateFunction& template_fun
 
     std::vector<int> years;
     {
-        const auto years_varname = "year";
+        constexpr auto years_varname = "year";
         const auto years_variable = forcing_file.getVar(years_varname);
         if (years_variable.isNull()) {
             throw std::runtime_error(filename + ": Variable '" + years_varname + "' not found");

@@ -28,17 +28,17 @@ namespace impactgen {
 
 class ReferenceTime {
   protected:
-    std::time_t time;
-    int accuracy;
+    std::time_t time = -1;
+    int accuracy = 1;
 
   public:
     explicit ReferenceTime(std::time_t time_p = -1, int accuracy_p = 1) : time(time_p), accuracy(accuracy_p) {}
     explicit ReferenceTime(const std::string& netcdf_format);
     static std::time_t year(int year_p);
     std::string to_netcdf_format() const;
-    int reference(std::time_t time_p) const;
-    std::time_t unreference(int time_p) const;
-    bool compatible_with(const ReferenceTime& other) const;
+    constexpr int reference(std::time_t time_p) const { return (time_p - time) / accuracy; }
+    constexpr std::time_t unreference(int time_p) const { return time_p * accuracy + time; }
+    constexpr bool compatible_with(const ReferenceTime& other) const { return other.accuracy == accuracy; }
 };
 
 }  // namespace impactgen

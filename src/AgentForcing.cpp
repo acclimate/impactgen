@@ -36,22 +36,6 @@ AgentForcing::AgentForcing(const std::vector<std::string>& sectors_p, const std:
     data = std::vector<ForcingType>(sectors->size() * regions->size(), 1);
 }
 
-const std::unordered_map<std::string, std::size_t>& AgentForcing::get_sectors() const { return *sectors; }
-
-const std::unordered_map<std::string, std::size_t>& AgentForcing::get_regions() const { return *regions; }
-
-ForcingType AgentForcing::operator()(const std::string& sector, const std::string& region) const {
-    return data[sectors->at(sector) * regions->size() + regions->at(region)];
-}
-
-ForcingType AgentForcing::operator()(std::size_t sector, std::size_t region) const { return data[sector * regions->size() + region]; }
-
-ForcingType& AgentForcing::operator()(const std::string& sector, const std::string& region) {
-    return data[sectors->at(sector) * regions->size() + regions->at(region)];
-}
-
-ForcingType& AgentForcing::operator()(std::size_t sector, std::size_t region) { return data[sector * regions->size() + region]; }
-
 void AgentForcing::include(const AgentForcing& other, ForcingCombination combination) {
     if (sectors.get() != other.sectors.get() || regions.get() != other.regions.get()) {
         throw std::runtime_error("Forcings are not related");

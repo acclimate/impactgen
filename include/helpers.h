@@ -32,7 +32,7 @@ namespace impactgen {
 using TemplateFunction = const std::function<std::string(const std::string&, const std::string&)>;
 
 extern std::string fill_template(const std::string& in, const TemplateFunction& f);
-extern std::string replace_all(const std::string& in, const std::string& to_replace, std::string replace_with);
+extern std::string replace_all(const std::string& in, const std::string& to_replace, const std::string& replace_with);
 
 }  // namespace impactgen
 

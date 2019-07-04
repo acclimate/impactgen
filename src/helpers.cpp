@@ -42,7 +42,7 @@ std::string fill_template(const std::string& in, const TemplateFunction& f) {
     return ss.str();
 }
 
-std::string replace_all(const std::string& in, const std::string& to_replace, std::string replace_with) {
+std::string replace_all(const std::string& in, const std::string& to_replace, const std::string& replace_with) {
     auto res = in;
     auto pos = res.find(to_replace);
     while (pos != std::string::npos) {

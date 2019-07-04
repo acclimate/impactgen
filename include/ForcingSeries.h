@@ -39,9 +39,8 @@ class ForcingSeries {
   public:
     const ReferenceTime reference_time;
     const Forcing base_forcing;
-    ForcingSeries() {}
-    ForcingSeries(Forcing base_forcing_p, ReferenceTime reference_time_p)
-        : base_forcing(std::move(base_forcing_p)), reference_time(std::move(reference_time_p)) {}
+    ForcingSeries() = default;
+    ForcingSeries(Forcing base_forcing_p, ReferenceTime reference_time_p) : base_forcing(std::move(base_forcing_p)), reference_time(reference_time_p) {}
 
     Forcing& insert_forcing(std::time_t time) {
         const auto t = reference_time.reference(time);

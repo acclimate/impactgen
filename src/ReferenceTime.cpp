@@ -73,10 +73,6 @@ ReferenceTime::ReferenceTime(const std::string& netcdf_format) {
     std::tie(time, accuracy) = p;
 }
 
-int ReferenceTime::reference(std::time_t time_p) const { return (time_p - time) / accuracy; }
-std::time_t ReferenceTime::unreference(int time_p) const { return time_p * accuracy + time; }
-bool ReferenceTime::compatible_with(const ReferenceTime& other) const { return other.accuracy == accuracy; }
-
 std::string ReferenceTime::to_netcdf_format() const {
     std::ostringstream res;
     switch (accuracy) {

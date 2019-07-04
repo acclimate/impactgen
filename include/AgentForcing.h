@@ -36,16 +36,20 @@ class AgentForcing {
     std::vector<ForcingType> data;
 
   public:
-    AgentForcing() {}
+    AgentForcing() = default;
     AgentForcing(const std::vector<std::string>& sectors_p, const std::vector<std::string>& regions_p);
-    const std::unordered_map<std::string, std::size_t>& get_sectors() const;
-    const std::unordered_map<std::string, std::size_t>& get_regions() const;
-    ForcingType operator()(const std::string& sector, const std::string& region) const;
-    ForcingType operator()(std::size_t sector, std::size_t region) const;
-    ForcingType& operator()(const std::string& sector, const std::string& region);
-    ForcingType& operator()(std::size_t sector, std::size_t region);
+    inline const std::unordered_map<std::string, std::size_t>& get_sectors() const { return *sectors; }
+    inline const std::unordered_map<std::string, std::size_t>& get_regions() const { return *regions; }
+    inline ForcingType operator()(const std::string& sector, const std::string& region) const {
+        return data[sectors->at(sector) * regions->size() + regions->at(region)];
+    }
+    inline ForcingType operator()(std::size_t sector, std::size_t region) const { return data[sector * regions->size() + region]; }
+    inline ForcingType& operator()(const std::string& sector, const std::string& region) {
+        return data[sectors->at(sector) * regions->size() + regions->at(region)];
+    }
+    inline ForcingType& operator()(std::size_t sector, std::size_t region) { return data[sector * regions->size() + region]; }
     void include(const AgentForcing& other, ForcingCombination combination);
-    const std::vector<ForcingType>& get_data() const { return data; }
+    constexpr const std::vector<ForcingType>& get_data() const { return data; }
 };
 
 }  // namespace impactgen

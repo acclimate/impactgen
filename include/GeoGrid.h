@@ -44,18 +44,74 @@ struct GeoGrid {
     T lat_abs_stepsize = 0;
     std::size_t lat_count = 0;
 
-    GeoGrid() {}
+    GeoGrid() = default;
     void read_from_netcdf(const netCDF::NcFile& file, const std::string& filename);
-    inline std::size_t size() const { return lat_count * lon_count; }
-    std::size_t lat_index(T lat) const;
-    std::size_t lon_index(T lon) const;
-    inline T lat(std::size_t lat_index) { return lat_min + lat_abs_stepsize * lat_index; }
-    inline T lon(std::size_t lon_index) { return lon_min + lon_abs_stepsize * lon_index; }
-    T operator/(const GeoGrid& other) const;
-    bool is_compatible(const GeoGrid& other) const;
+    constexpr std::size_t size() const { return lat_count * lon_count; }
+    constexpr inline T lat(std::size_t lat_index) { return lat_min + lat_abs_stepsize * lat_index; }
+    constexpr inline T lon(std::size_t lon_index) { return lon_min + lon_abs_stepsize * lon_index; }
+    constexpr std::size_t lat_index(T lat) const {
+        T res;
+        if (lat_stepsize < 0) {
+            res = (lat_max - lat) * lat_count / (lat_max - lat_min - lat_stepsize);
+        } else {
+            res = (lat - lat_min) * lat_count / (lat_max - lat_min + lat_stepsize);
+        }
+        if (res < 0 || res >= lat_count) {
+            return std::numeric_limits<std::size_t>::quiet_NaN();
+        }
+        return static_cast<std::size_t>(res);
+    }
+    constexpr std::size_t lon_index(T lon) const {
+        T res;
+        if (lon_stepsize < 0) {
+            res = (lon_max - lon) * lon_count / (lon_max - lon_min - lon_stepsize);
+        } else {
+            res = (lon - lon_min) * lon_count / (lon_max - lon_min + lon_stepsize);
+        }
+        if (res < 0 || res >= lon_count) {
+            return std::numeric_limits<std::size_t>::quiet_NaN();
+        }
+        return static_cast<std::size_t>(res);
+    }
+    constexpr T operator/(const GeoGrid<T>& other) const { return lat_abs_stepsize * lon_abs_stepsize / other.lat_abs_stepsize / other.lon_abs_stepsize; }
+    constexpr bool is_compatible(const GeoGrid<T>& other) const {
+        return std::abs(lat_abs_stepsize - other.lat_abs_stepsize) / lat_abs_stepsize < 1e-2
+               && std::abs(lon_abs_stepsize - other.lon_abs_stepsize) / lon_abs_stepsize < 1e-2;
+    }
     template<typename V>
-    nvector::View<V, 2> box(
-        const nvector::View<V, 2>& view, T lat_min_p, T lat_max_p, T lon_min_p, T lon_max_p, std::size_t max_lat_size, std::size_t max_lon_size) const;
+    constexpr nvector::View<V, 2> box(
+        const nvector::View<V, 2>& view, T lat_min_p, T lat_max_p, T lon_min_p, T lon_max_p, std::size_t max_lat_size, std::size_t max_lon_size) const {
+        const auto& lat_slice = view.template slice<0>();
+        const auto& lon_slice = view.template slice<1>();
+        nvector::Slice new_lat_slice;
+        nvector::Slice new_lon_slice;
+
+        const auto lat_min_index = lat_index(lat_min_p);
+        const auto lat_max_index = lat_index(lat_max_p);
+        if (lat_min_index > lat_max_index) {
+            new_lat_slice.begin = -lat_slice.begin - lat_min_index;
+            new_lat_slice.size = std::min(lat_min_index - lat_max_index, max_lat_size);
+            new_lat_slice.stride = -lat_slice.stride;
+        } else {
+            new_lat_slice.begin = lat_slice.begin + lat_min_index;
+            new_lat_slice.size = std::min(lat_max_index - lat_min_index, max_lat_size);
+            new_lat_slice.stride = lat_slice.stride;
+        }
+
+        const auto lon_min_index = lon_index(lon_min_p);
+        const auto lon_max_index = lon_index(lon_max_p);
+        if (lon_min_index > lon_max_index) {
+            new_lon_slice.begin = -lon_slice.begin - lon_min_index;
+            new_lon_slice.size = std::min(lon_min_index - lon_max_index, max_lon_size);
+            new_lon_slice.stride = -lon_slice.stride;
+        } else {
+            new_lon_slice.begin = lon_slice.begin + lon_min_index;
+            new_lon_slice.size = std::min(lon_max_index - lon_min_index, max_lon_size);
+            new_lon_slice.stride = lon_slice.stride;
+        }
+
+        return typename nvector::View<V, 2>(view.data(), {new_lat_slice, new_lon_slice});
+    }
 };
 
 template<typename Func, typename T>

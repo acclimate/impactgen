@@ -98,7 +98,7 @@ void HeatLaborProductivity::join(Output& output, const TemplateFunction& templat
                                   if (forcing_v > 1e10 || proxy_value <= 0 || i < 0 || std::isnan(forcing_v) || std::isnan(proxy_value)) {
                                       return true;
                                   }
-                                  
+
                                   if (forcing_v > threshold) {
                                       const auto region = regions[i];
                                       if (region < 0) {
@@ -110,7 +110,7 @@ void HeatLaborProductivity::join(Output& output, const TemplateFunction& templat
                                   }
                                   return true;
                               });
-        
+
         for (std::size_t i = 0; i < regions.size(); ++i) {
             const auto region = regions[i];
             if (region < 0) {

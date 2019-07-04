@@ -38,7 +38,7 @@ class Impact {
 
   public:
     virtual void join(Output& output, const TemplateFunction& template_func) = 0;
-    virtual ~Impact() {}
+    virtual ~Impact() = default;
 };
 
 }  // namespace impactgen

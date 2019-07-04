@@ -26,7 +26,7 @@
 
 namespace impactgen {
 
-ProxiedImpact::ProxiedImpact(const settings::SettingsNode& proxy_node) : GriddedImpact() {
+ProxiedImpact::ProxiedImpact(const settings::SettingsNode& proxy_node) {
     proxy_filename = proxy_node["file"].as<std::string>();
     proxy_varname = proxy_node["variable"].as<std::string>();
     verbose = proxy_node["verbose"].as<bool>(false);

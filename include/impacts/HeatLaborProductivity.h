@@ -23,11 +23,11 @@
 #define IMPACTGEN_HEATLABORPRODUCTIVITY_H
 
 #include <string>
+#include "GeoGrid.h"
 #include "impacts/AgentImpact.h"
 #include "impacts/Impact.h"
 #include "impacts/ProxiedImpact.h"
 #include "settingsnode.h"
-#include "GeoGrid.h"
 
 namespace impactgen {
 
