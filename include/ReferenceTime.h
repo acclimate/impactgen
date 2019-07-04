@@ -32,7 +32,7 @@ class ReferenceTime {
     int accuracy = 1;
 
   public:
-    explicit ReferenceTime(std::time_t time_p = -1, int accuracy_p = 1) : time(time_p), accuracy(accuracy_p) {}
+    explicit constexpr ReferenceTime(std::time_t time_p = -1, int accuracy_p = 1) : time(time_p), accuracy(accuracy_p) {}
     explicit ReferenceTime(const std::string& netcdf_format);
     static std::time_t year(int year_p);
     std::string to_netcdf_format() const;
