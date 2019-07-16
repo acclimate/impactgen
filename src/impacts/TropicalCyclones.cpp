@@ -162,15 +162,13 @@ void TropicalCyclones::join(Output& output, const TemplateFunction& template_fun
         progressbar::ProgressBar event_bar(events_cnt, "Events", true);
         for (std::size_t event = 0; event < events_cnt; ++event) {
             if (chunk_pos == chunk_size) {
-                forcing_variable.getVar(
-                    {realization, year_index, event, 0, 0},
-                    {1, 1, event + chunk_size > events_cnt ? events_cnt - event : chunk_size, forcing_grid.lat_count, forcing_grid.lon_count},
-                    &chunk_buffer[0]);
+                forcing_variable.getVar({realization, year_index, event, 0, 0},
+                                        {1, 1, std::min(chunk_size, events_cnt - event), forcing_grid.lat_count, forcing_grid.lon_count}, &chunk_buffer[0]);
                 chunk_pos = 0;
+                event_bar.reset_eta();
             }
-            nvector::View<ForcingType, 2> forcing_values(
-                std::begin(chunk_buffer) + chunk_pos * forcing_grid.size(),
-                {nvector::Slice{0, forcing_grid.lat_count, static_cast<int>(forcing_grid.lon_count)}, nvector::Slice{0, forcing_grid.lon_count, 1}});
+            nvector::View<ForcingType, 2> forcing_values(std::begin(chunk_buffer) + chunk_pos * forcing_grid.size(), forcing_grid.lat_count,
+                                                         forcing_grid.lon_count);
             ++chunk_pos;
             std::fill(std::begin(region_forcing), std::end(region_forcing), 0);
             std::size_t lat_min = std::numeric_limits<std::size_t>::max();

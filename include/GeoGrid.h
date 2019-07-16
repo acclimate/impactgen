@@ -169,7 +169,7 @@ inline auto common_grid_view(GeoGrid<T>& common_grid, const Args&... grid_views)
 }
 
 template<typename V>
-inline void print_view(const nvector::View<V, 2>& view, const std::size_t width = 50) {
+inline void print_view(const nvector::View<V, 2>& view, V threshold = 0, const std::size_t width = 50) {
     const auto& lat_slice = view.template slice<0>();
     const auto& lon_slice = view.template slice<1>();
     const std::size_t agg_size = lon_slice.size / width;
@@ -178,7 +178,7 @@ inline void print_view(const nvector::View<V, 2>& view, const std::size_t width 
             std::size_t count = 0;
             for (std::size_t lat = lat_chunk; lat < std::min(lat_slice.size, lat_chunk + agg_size); ++lat) {
                 for (std::size_t lon = lon_chunk; lon < std::min(lon_slice.size, lon_chunk + agg_size); ++lon) {
-                    if (view(lat_slice.size - 1 - lat, lon) > 0) {
+                    if (view(lat, lon) > threshold) {
                         ++count;
                     }
                 }

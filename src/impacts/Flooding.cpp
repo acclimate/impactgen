@@ -86,15 +86,13 @@ void Flooding::join(Output& output, const TemplateFunction& template_func) {
     std::vector<ForcingType> region_forcing(regions.size());
     for (std::size_t t = 0; t < time_variable.times.size(); ++t) {
         if (chunk_pos == chunk_size) {
-            forcing_variable.getVar(
-                {t, 0, 0},
-                {t + chunk_size > time_variable.times.size() ? time_variable.times.size() - t : chunk_size, forcing_grid.lat_count, forcing_grid.lon_count},
-                &chunk_buffer[0]);
+            forcing_variable.getVar({t, 0, 0}, {std::min(chunk_size, time_variable.times.size() - t), forcing_grid.lat_count, forcing_grid.lon_count},
+                                    &chunk_buffer[0]);
             chunk_pos = 0;
+            time_bar.reset_eta();
         }
-        nvector::View<ForcingType, 2> forcing_values(
-            std::begin(chunk_buffer) + chunk_pos * forcing_grid.size(),
-            {nvector::Slice{0, forcing_grid.lat_count, static_cast<int>(forcing_grid.lon_count)}, nvector::Slice{0, forcing_grid.lon_count, 1}});
+        nvector::View<ForcingType, 2> forcing_values(std::begin(chunk_buffer) + chunk_pos * forcing_grid.size(), forcing_grid.lat_count,
+                                                     forcing_grid.lon_count);
         ++chunk_pos;
         std::fill(std::begin(region_forcing), std::end(region_forcing), 0);
         GeoGrid<float> common_grid;
