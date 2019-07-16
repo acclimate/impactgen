@@ -31,7 +31,7 @@ project(impactgen)
 file(GLOB IMPACTGEN_SOURCES src/*.cpp src/impacts/*.cpp)
 add_executable(impactgen ${IMPACTGEN_SOURCES})
 
-target_include_directories(impactgen PRIVATE include lib/cpp-library)
+target_include_directories(impactgen PRIVATE include lib/cpp-library lib/nvector)
 target_compile_options(impactgen PRIVATE -std=c++14)
 
 set_ccache_use()
@@ -41,22 +41,23 @@ add_git_version(impactgen
   FALLBACK_VERSION 1.0.0
   WITH_DIFF)
 
-option(IMPACTGEN_PARALLELIZATION "" ON)
-if(IMPACTGEN_PARALLELIZATION)
+option(PARALLELIZATION "" ON)
+if(PARALLELIZATION)
   find_package(OpenMP REQUIRED)
   set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} ${OpenMP_C_FLAGS}")
   set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} ${OpenMP_CXX_FLAGS}")
 endif()
 
-option(IMPACTGEN_PROGRESSBARS_SILENT "" OFF)
-if(IMPACTGEN_PROGRESSBARS_SILENT)
+endif()
+
+option(PROGRESSBARS_SILENT "" OFF)
+if(PROGRESSBARS_SILENT)
   target_compile_definitions(impactgen PUBLIC PROGRESSBAR_SILENT)
 endif()
 
-include_netcdf_cxx4(impactgen ON v4.3.0)
-
 include(lib/settingsnode/settingsnode.cmake)
 include_settingsnode(impactgen)
+include_netcdf_cxx4(impactgen ON v4.3.0)
 include_yaml_cpp(impactgen ON "yaml-cpp-0.6.2")
 
 add_cpp_tools(impactgen)
