@@ -210,7 +210,7 @@ void TropicalCyclones::join(Output& output, const TemplateFunction& template_fun
                 }
             }
             const auto duration = static_cast<int>(
-                std::ceil(distance(common_grid.lon(lon_min), common_grid.lat(lat_min), common_grid.lon(lon_min), common_grid.lat(lat_max)) / velocity / 24));
+                std::ceil(distance(common_grid.lon(lon_min), common_grid.lat(lat_min), common_grid.lon(lon_max), common_grid.lat(lat_max)) / velocity / 24));
             const auto& season = seasons.at(basin);
             std::uniform_int_distribution<int> distribution(season.first, season.second - duration);
             const auto start = distribution(random_generator);
