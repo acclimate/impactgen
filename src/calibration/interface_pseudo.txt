@@ -1,0 +1,43 @@
+// if the codes were to be implemented in c++, limbo will be adopted for bayesian optimization (https://arxiv.org/pdf/1611.07343.pdf)
+// otherwise, bayesian-optimization in python will be the library of choice.
+// The performance of the whole framework will not be hindered greatly by the bayesian optimization library we decide to use, as the majority of computations will lie in the previous parts (grid operations, damage calculations etc.) which will be accelerated with GPUs.
+
+threshold <- CALIBRATION_THRESHOLD
+max_iter <- CALIBRATION_MAX_ITERATION
+max_init <- CALIBRATION_MAX_RANDOMIZATION
+
+// regions: the list of regions where you want to observe and compare
+regions <- { "USA", "CHN", "THA" };
+// times: the list of months where you want to observe and compare, as the time window here is between Jan.2000 - Dec.2010, the values in times can only be between [0, 11*12]
+times <- { 0, 3, 50, 103 };
+
+// Bounded region of parameter space, this is just an example, please adjust 
+// the pbounds as you see fit 
+pbounds <- {'x': (2, 4), 'y': (-3, 3), 'z': (-1, 1)}
+optimizer <- BayesianOptimization(
+    f=valuation_function,
+    pbounds=pbounds,
+    random_state=1,
+)
+// valuation_function is the function that takes the hyperparameters as input and generates the valuation result as output value.
+// Here valuation method can be anything ranging from MAPE, MSE to hamming distances between impact observed and impact forecasted. It might even be possible to have multi-objective optimization.
+// one possible version of valuation_function could be:
+function valuation_function(x, y, z):
+    sum_mse <- 0
+    for reg in regions:
+	for time in times:
+            val_real <- val_TE(reg, time)
+	    val_pred <- val_impactgen(reg, time)
+            err <- val_real - val_pred
+            sum_mse <- sum_mse + err * err
+    sum_mse = sum_mse / (size(regions) * size(times))
+        
+// init_points: How many steps of random exploration you want to perform. Random exploration can help by diversifying the exploration space.
+// n_iter: How many steps of bayesian optimization you want to perform. The more steps the more likely to find a good maximum you are.
+optimizer.maximize(
+    init_points=max_init,
+    n_iter=max_iter,
+)
+// in the end, optimizer will return the parameter set with the optimal valuation_function score as optimizer.max.params, the target score will be optimizer.max.target
+	
+	
