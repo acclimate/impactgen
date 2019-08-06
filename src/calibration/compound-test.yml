@@ -1,0 +1,146 @@
+combination: addition
+reference: days since 2018-12-31
+regions:
+  type: netcdf
+  file: /p/projects/acclimate/Data/EORA/EORA_SSDrenamed/CHN_USA_dissagregated/EORA_2012_CHN_USA.nc
+  variable: region
+sectors:
+  type: netcdf
+  file: /p/projects/acclimate/Data/EORA/EORA_SSDrenamed/CHN_USA_dissagregated/EORA_2012_CHN_USA.nc
+  variable: sector
+output:
+  file: output.nc
+impacts:
+  - type: heat_labor_productivity
+    chunk_size: 8000
+    sectors:
+      AGRI: 0.008
+      FISH: 0.008
+      MINQ: 0.042
+      GAST: 0.061
+      WHOT: 0.061
+      OTHE: 0.022
+    isoraster:
+      file: /p/projects/acclimate/kilian/data/input/raster/iso_raster_adv_CHN_USA_1800_sec.nc
+      variable: iso
+    proxy:
+      file: /p/projects/acclimate/Data/population/gpw/gpw_v4_population_count_rev11_2015_1800_sec_remapped.nc
+      variable: Band1
+    day_temperature:
+      file: /p/projects/acclimate/kilian/data/input/temperature/ISIMIP2b/GFDL-ESM2M/projections/rcp26/tas_GFDL-ESM2M_rcp26_2019-2039_preday.nc
+      variable: tas
+      threshold: 300.15
+  - type: flooding
+    chunk_size: 1
+    variables:
+      year:
+        from: 2019
+        to: 2019
+        #to: 2039
+    time_shift: -86400
+    sectors:
+      - AGRI
+      - FISH
+      - MINQ
+      - FOOD
+      - TEXL
+      - WOOD
+      - OILC
+      - METL
+      - MACH
+      - TREQ
+      - MANU
+      - ELWA
+      - CONS
+      - REPA
+      - WHOT
+      - RETT
+      - TRAN
+    isoraster:
+      file: /p/projects/acclimate/kilian/data/input/raster/iso_raster_adv_CHN_USA_150_sec.nc
+      variable: iso
+    proxy:
+      file: /p/projects/acclimate/Data/population/gpw/gpw_v4_population_count_rev11_2015_150_sec_remapped.nc
+      variable: Band1
+    recovery:
+      exponent: 0.8
+      threshold: 1e-3
+    flood_fraction:
+      file: /home/willner/out2.nc
+      #file: /p/tmp/willner/isimip2b_kk/out/CLM45_gfdl-esm2m/rcp26/fldfrc_[[year]]_threshold_0.1.nc
+      variable: fldfrc
+  - type: tropical_cyclones
+    seed: 0
+    chunk_size: 25
+    variables:
+      basin:
+        - NA
+        - NI
+        - WPN
+        - SIW
+        - SIE
+        - SPE
+        - SPW
+        - WPS
+        - EP
+    seasons:
+      NA:
+        from: 6
+        to: 11
+      NI:
+        from: 5
+        to: 12
+      WPN:
+        from: 7
+        to: 12
+      SIW:
+        from: 11
+        to: 4
+      SIE:
+        from: 11
+        to: 4
+      SPE:
+        from: 11
+        to: 5
+      SPW:
+        from: 11
+        to: 5
+      WPS:
+        from: 5
+        to: 12
+      WPS:
+        from: 11
+        to: 5
+    years:
+      from: 2019
+      to: 2039
+    realization: 1
+    velocity: 27.78 
+    threshold: 64
+    sectors:
+      - AGRI
+      - FISH
+      - MINQ
+      - FOOD
+      - TEXL
+      - WOOD
+      - OILC
+      - METL
+      - MACH
+      - TREQ
+      - MANU
+      - ELWA
+      - CONS
+      - REPA
+      - WHOT
+      - RETT
+      - TRAN
+    isoraster:
+      file: /p/projects/acclimate/kilian/data/input/raster/iso_raster_adv_CHN_USA_360_sec.nc
+      variable: iso
+    proxy:
+      file: /p/projects/acclimate/Data/population/gpw/gpw_v4_population_count_rev11_2015_360_sec_remapped.nc
+      variable: Band1
+    wind_speed:
+      file: /p/projects/acclimate/compound/tc/TC-hazard_random_realizations-100_gcm-GFDL-ESM2M_rcp26_basin-[[basin]]_baseyear-2015_GMT-time.nc
+      variable: windspeed
