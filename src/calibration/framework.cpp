@@ -7,21 +7,16 @@
 
 using namespace std;
 
-struct TimeRange {
-    int begin;
-    int length;
-};
-
 std::vector<std::string> regions = { "USA", "CHN", "JPN", "DEU", "GBR",
                                      "FRA", "IND", "ITA", "BRA", "CAN",
                                      "KOR", "RUS", "ESP", "AUS", "MEX",
                                      "IDN", "TUR", "NLD", "CHE", "SAU",
                                      "ARG", "ZAF", "SGP", "THA"};
-struct IndexRange {
+struct TimeRange {
   int begin;
   int count;
 };
-std::vector<IndexRange> times = { {0, 31}, {31 + 28, 28} };
+std::vector<TimeRange> times = { {0, 31}, {31 + 28, 28} };
 
 int event_hurricane_months_to_observe[12] = {0, 0, 0, 0, 0, 0, 0, 1, 1, 1, 0, 0}; // for Hurricane: Aug, Sep, Oct
 int event_heatstress_months_to_observe[12] = {0, 0, 0, 0, 0, 1, 1, 1, 0, 0, 0, 0}; // for Heatstress: Jun, Jul, Aug
