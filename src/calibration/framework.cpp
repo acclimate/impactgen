@@ -29,8 +29,11 @@ int event_flooding_months_to_observe[12] = {0, 0, 0, 0, 0, 0, 0, 1, 1, 1, 0, 0};
 int years_to_observe[10] = {2000, 2001, 2002, 2003, 2004, 2005, 2006, 2007, 2008, 2009};
 int year_validation = 2010;
 
-//function will return total number of days
-int  getNumberOfDays(int month, int year)
+/**
+ * function will return total number of days for month, year combination
+ * return int
+ **/
+int  get_number_of_days(int month, int year)
 {
 	//leap year condition, if month is 2
 	if( month == 2)
