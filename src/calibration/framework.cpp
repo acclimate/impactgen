@@ -28,7 +28,7 @@ int year_validation = 2010;
 int tmp_idx = 0;
 for (int i = 0; i < 10; ++i)
 {
-  for (int j = 0; j < 12; ++i)
+  for (int j = 0; j < 12; ++j)
   {
     int tmp_num_day = get_number_of_days(j, years_to_observe[i]);
     if (event_hurricane_months_to_observe[j]||event_heatstress_months_to_observe[j]||event_flooding_months_to_observe[j])
