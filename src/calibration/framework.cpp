@@ -5,6 +5,8 @@
 #include <unordered_map>
 #include <algorithm>
 
+using namespace std;
+
 struct TimeRange {
     int begin;
     int length;
@@ -27,16 +29,23 @@ int event_flooding_months_to_observe[12] = {0, 0, 0, 0, 0, 0, 0, 1, 1, 1, 0, 0};
 int years_to_observe[10] = {2000, 2001, 2002, 2003, 2004, 2005, 2006, 2007, 2008, 2009};
 int year_validation = 2010;
 
-void check_leap_year(year)
+//function will return total number of days
+int  getNumberOfDays(int month, int year)
 {
-  if ( ( (year%4==0) && (year%100!=0) ) || (year%400==0) )
-​  {
-    return true;
-  }
-  else
-  {
-    return false;
-  }
+	//leap year condition, if month is 2
+	if( month == 2)
+	{
+		if((year%400==0) || (year%4==0 && year%100!=0))
+			return 29;
+		else
+			return 28;
+	}
+	//months which has 31 days
+	else if(month == 1 || month == 3 || month == 5 || month == 7 || month == 8
+	||month == 10 || month==12)
+		return 31;
+	else
+		return 30;
 }
 
 void initialize_impactgen(settings::SettingsNode& settings,
