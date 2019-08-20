@@ -4,6 +4,7 @@
 #include <string>
 #include <unordered_map>
 #include <algorithm>
+#include <vector>
 
 using namespace std;
 
@@ -24,10 +25,28 @@ int event_flooding_months_to_observe[12] = {0, 0, 0, 0, 0, 0, 0, 1, 1, 1, 0, 0};
 int years_to_observe[10] = {2000, 2001, 2002, 2003, 2004, 2005, 2006, 2007, 2008, 2009};
 int year_validation = 2010;
 
-/**
- * function will return total number of days for month, year combination
- * return int
- **/
+int tmp_idx = 0;
+for (int i = 0; i < 10; ++i)
+{
+  for (int j = 0; j < 12; ++i)
+  {
+    int tmp_num_day = get_number_of_days(j, years_to_observe[i]);
+    if (event_hurricane_months_to_observe[j]||event_heatstress_months_to_observe[j]||event_flooding_months_to_observe[j])
+    {
+      times.push_back({tmp_idx+tmp_num_day, tmp_num_day});
+    }
+    tmp_idx += tmp_num_day;
+  }
+}
+
+
+/** get_number_of_days
+    Function will return total number of days for month, year combination
+
+    @param month Type int
+    @param year Type int
+    @return int result
+*/
 int  get_number_of_days(int month, int year)
 {
 	//leap year condition, if month is 2
@@ -46,6 +65,21 @@ int  get_number_of_days(int month, int year)
 		return 30;
 }
 
+/** check_leap_year
+    Function will return true or false of leap year, depending on year
+
+    @param year Type int
+    @return boolean result
+*/
+bool check_leap_year(int year)
+{
+	if((year%400==0) || (year%4==0 && year%100!=0))
+		return true;
+	else
+		return false;
+}
+
+
 void initialize_impactgen(settings::SettingsNode& settings,
   std::vector<TimeRange> times,
   std::unordered_map<std::string,
@@ -55,7 +89,7 @@ float generate_impact(std::vector<float> parameters);
 int main()
 {
   // TO DO:
-  // define settings, times, map, trading_economics_data and parameters 
+  // define settings, map, trading_economics_data and parameters
   initialize_impactgen(settings, times, map, trading_economics_data);
   generate_impact(parameters);
   return 0;
