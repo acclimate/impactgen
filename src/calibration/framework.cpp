@@ -54,5 +54,9 @@ float generate_impact(std::vector<float> parameters);
 
 int main()
 {
+  // TO DO:
+  // define settings, times, map, trading_economics_data and parameters 
+  initialize_impactgen(settings, times, map, trading_economics_data);
+  generate_impact(parameters);
   return 0;
 }
