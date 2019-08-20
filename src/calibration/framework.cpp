@@ -17,7 +17,7 @@ struct TimeRange {
   int begin;
   int count;
 };
-std::vector<TimeRange> times = { {0, 31}, {31 + 28, 28} };
+std::vector<TimeRange> times;
 
 int event_hurricane_months_to_observe[12] = {0, 0, 0, 0, 0, 0, 0, 1, 1, 1, 0, 0}; // for Hurricane: Aug, Sep, Oct
 int event_heatstress_months_to_observe[12] = {0, 0, 0, 0, 0, 1, 1, 1, 0, 0, 0, 0}; // for Heatstress: Jun, Jul, Aug
