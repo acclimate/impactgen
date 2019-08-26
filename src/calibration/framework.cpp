@@ -80,11 +80,10 @@ bool check_leap_year(int year)
 }
 
 
-void initialize_impactgen(settings::SettingsNode& settings,
-  std::vector<TimeRange> times,
-  std::unordered_map<std::string,
-  std::vector<float> trading_economics_data);
-float generate_impact(std::vector<float> parameters);
+void initialize_impactgen(settings::SettingsNode& settings, // found in main.cpp
+  const std::vector<TimeRange>& times,
+  std::unordered_map<std::string, std::vector<float>> trading_economics_data);
+float generate_impact(std::vector<float> parameters); //unordered_map: <reg, param(s)>
 
 int main()
 {
