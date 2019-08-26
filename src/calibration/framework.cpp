@@ -13,11 +13,14 @@ std::vector<std::string> regions = { "USA", "CHN", "JPN", "DEU", "GBR",
                                      "KOR", "RUS", "ESP", "AUS", "MEX",
                                      "IDN", "TUR", "NLD", "CHE", "SAU",
                                      "ARG", "ZAF", "SGP", "THA"};
+
+std:string trading_economics_dir = "/p/projects/zeean/calibration"
+
 struct TimeRange {
   int begin;
   int count;
 };
-std::vector<TimeRange> times = { {0, 31}, {31 + 28, 28} };
+std::vector<TimeRange> times;
 
 int event_hurricane_months_to_observe[12] = {0, 0, 0, 0, 0, 0, 0, 1, 1, 1, 0, 0}; // for Hurricane: Aug, Sep, Oct
 int event_heatstress_months_to_observe[12] = {0, 0, 0, 0, 0, 1, 1, 1, 0, 0, 0, 0}; // for Heatstress: Jun, Jul, Aug
@@ -80,11 +83,10 @@ bool check_leap_year(int year)
 }
 
 
-void initialize_impactgen(settings::SettingsNode& settings,
-  std::vector<TimeRange> times,
-  std::unordered_map<std::string,
-  std::vector<float> trading_economics_data);
-float generate_impact(std::vector<float> parameters);
+void initialize_impactgen(settings::SettingsNode& settings, // found in main.cpp
+  const std::vector<TimeRange>& times,
+  std::unordered_map<std::string, std::vector<float>> trading_economics_data);
+float generate_impact(std::vector<float> parameters); //unordered_map: <reg, param(s)>
 
 int main()
 {
