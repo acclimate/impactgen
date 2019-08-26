@@ -8,6 +8,11 @@
 
 using namespace std;
 
+// NLD: earliest data gathering for NLD is Jan-2001
+// this means missing data handling mechanism needs to be in place
+// CHE: has only quarterly data starting from Jan-2000.
+// SAU: only steel production has monthly data starting from Jan-2000, all other are quarterly or start from 2016
+
 std::vector<std::string> regions = { "USA", "CHN", "JPN", "DEU", "GBR",
                                      "FRA", "IND", "ITA", "BRA", "CAN",
                                      "KOR", "RUS", "ESP", "AUS", "MEX",
