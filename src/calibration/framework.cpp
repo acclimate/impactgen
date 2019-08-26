@@ -19,7 +19,7 @@ std::vector<std::string> regions = { "USA", "CHN", "JPN", "DEU", "GBR",
                                      "IDN", "TUR", "NLD", "CHE", "SAU",
                                      "ARG", "ZAF", "SGP", "THA"};
 
-std:string trading_economics_dir = "/p/projects/zeean/calibration/tradingeconomics_data"
+std::string trading_economics_dir = "/p/projects/zeean/calibration/tradingeconomics_data"
 
 struct TimeRange {
   int begin;
