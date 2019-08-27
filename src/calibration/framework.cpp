@@ -30,11 +30,20 @@ std::unordered_map<std::string, std::vector<float>> trading_economics_data;
 
 for(std::size_t i=0; i<regions.size(); ++i)
 {
-  std::string tmp_te_file = trading_economics_dir+"production_"+regions[i]+"_"+sectors[0]+".csv";;
-  std::cout << tmp_te_file << '\n';
-  // read and parse tmp_te_file as .csv
-  // generate tmp_val_vector from tmp_te_file
-  trading_economics_data[regions[i]] = tmp_val_vector;
+  for(std::size_t j=0; j<sectors.size(); ++j)
+  {
+    fstream fileStream;
+    std::string tmp_te_file = trading_economics_dir+"production_"+regions[i]+"_"+sectors[j]+".csv";;
+
+    fileStream.open(tmp_te_file);
+    if (!fileStream.fail()) { // if the file can be found
+      // std::cout << tmp_te_file << '\n';
+      // read and parse tmp_te_file as .csv
+      // generate tmp_val_vector from tmp_te_file
+      trading_economics_data[regions[i]] = tmp_val_vector;
+      break;
+    }
+  }
 }
 
 struct TimeRange {
