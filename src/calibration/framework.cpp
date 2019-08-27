@@ -19,7 +19,23 @@ std::vector<std::string> regions = { "USA", "CHN", "JPN", "DEU", "GBR",
                                      "IDN", "TUR", "NLD", "CHE", "SAU",
                                      "ARG", "ZAF", "SGP", "THA"};
 
-std::string trading_economics_dir = "/p/projects/zeean/calibration/tradingeconomics_data"
+// sector preference
+std::vector<std::string> sectors = { "Capacity Utilization", "Manufacturing Production",
+                                     "Industrial Production", "TREQ", "Steel Production",
+                                     "Electricity Production"};
+
+std::string trading_economics_dir = "/p/projects/zeean/calibration/tradingeconomics_data/";
+
+std::unordered_map<std::string, std::vector<float>> trading_economics_data;
+
+for(std::size_t i=0; i<regions.size(); ++i)
+{
+  std::string tmp_te_file = trading_economics_dir+"production_"+regions[i]+"_"+sectors[0]+".csv";;
+  std::cout << tmp_te_file << '\n';
+  // read and parse tmp_te_file as .csv
+  // generate tmp_val_vector from tmp_te_file
+  trading_economics_data[regions[i]] = tmp_val_vector;
+}
 
 struct TimeRange {
   int begin;
