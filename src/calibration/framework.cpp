@@ -250,7 +250,7 @@ float generate_impact(std::vector<float> parameters); //unordered_map: <reg, par
 int main()
 {
   // TO DO:
-  // define settings, map, trading_economics_data and parameters
+  // define settings
   initialize_impactgen(settings, times, trading_economics_data);
   generate_impact(parameters);
   return 0;
