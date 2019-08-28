@@ -14,6 +14,20 @@ int event_flooding_months_to_observe[12] = {0, 0, 0, 0, 0, 0, 0, 1, 1, 1, 0, 0};
 int years_to_observe[10] = {2000, 2001, 2002, 2003, 2004, 2005, 2006, 2007, 2008, 2009};
 int year_validation = 2010;
 
+// NLD: earliest data gathering for NLD is Jan-2001
+// this means missing data handling mechanism needs to be in place
+// CHE: has only quarterly data starting from Jan-2000.
+// SAU: only steel production has monthly data starting from Jan-2000, all other are quarterly or start from 2016
+std::vector<std::string> regions = { "USA", "CHN", "JPN", "DEU", "GBR",
+                                     "FRA", "IND", "ITA", "BRA", "CAN",
+                                     "KOR", "RUS", "ESP", "AUS", "MEX",
+                                     "IDN", "TUR", "SAU",
+                                     // "NLD", "CHE",
+                                     "ARG", "ZAF", "SGP", "THA"};
+
+int num_params_per_region = 10;
+double params_min = 0.0;
+double params_max = 1.0;
 
 /** initialize_te_data
     Function will initialize trading_economics_data by reference
@@ -23,16 +37,6 @@ int year_validation = 2010;
 */
 void initialize_te_data(std::unordered_map<std::string, std::vector<float>> &trading_economics_data)
 {
-  // NLD: earliest data gathering for NLD is Jan-2001
-  // this means missing data handling mechanism needs to be in place
-  // CHE: has only quarterly data starting from Jan-2000.
-  // SAU: only steel production has monthly data starting from Jan-2000, all other are quarterly or start from 2016
-  std::vector<std::string> regions = { "USA", "CHN", "JPN", "DEU", "GBR",
-                                       "FRA", "IND", "ITA", "BRA", "CAN",
-                                       "KOR", "RUS", "ESP", "AUS", "MEX",
-                                       "IDN", "TUR", "NLD", "CHE", "SAU",
-                                       "ARG", "ZAF", "SGP", "THA"};
-
   // sector preference
   std::vector<std::string> sectors = { "Manufacturing Production", "Industrial Production",
                                      "Capacity Utilization", "TREQ", "Steel Production",
@@ -123,13 +127,13 @@ void initialize_te_data(std::unordered_map<std::string, std::vector<float>> &tra
   }
 }
 
-/** initialize_times_data
+/** initialize_times
     Function will initialize times by reference
 
     @param times Type std::vector<TimeRange>
     @return void
 */
-void initialize_times_data(std::vector<TimeRange> &times)
+void initialize_times(std::vector<TimeRange> &times)
 {
   int tmp_idx = 0;
   for (int i = 0; i < 10; ++i)
@@ -146,6 +150,26 @@ void initialize_times_data(std::vector<TimeRange> &times)
   }
 }
 
+/** initialize_parameters
+    Function will initialize parameters by reference
+
+    @param times Type std::vector<TimeRange>
+    @return void
+*/
+void initialize_parameters(std::unordered_map<std::string, std::vector<float>> &parameters)
+{
+  for(std::size_t i=0; i<regions.size(); ++i)
+  {
+    std::vector<double> tmp_params_vector;
+    parameters[regions[i]] = std::vector<double>();
+    for (int j=0; j<num_params_per_region; j++)
+    {
+      tmp_params_vector.push_back(RandomFloat(params_min, params_max));
+    }
+    parameters[regions[i]] = tmp_params_vector;
+  }
+}
+
 // initialize output data
 std::unordered_map<std::string, std::vector<float>> trading_economics_data;
 initialize_te_data(trading_economics_data);
@@ -158,7 +182,11 @@ struct TimeRange {
 // initialize times data
 std::vector<TimeRange> times;
 
-initialize_times_data(times);
+initialize_times(times);
+
+// initialize parameters
+std::unordered_map<std::string, std::vector<float>> parameters;
+initialize_parameters(parameters);
 
 /** get_number_of_days
     Function will return total number of days for month, year combination
@@ -199,6 +227,20 @@ bool check_leap_year(int year)
 		return false;
 }
 
+/** RandomFloat
+    Function will return a random double number in a certain range
+
+    @param a Type double
+    @param b Type double
+    @return double result
+*/
+double RandomFloat(double a, double b) {
+    double random = ((double) rand()) / (double) RAND_MAX;
+    double diff = b - a;
+    double r = random * diff;
+    return a + r;
+}
+
 
 void initialize_impactgen(settings::SettingsNode& settings, // found in main.cpp
   const std::vector<TimeRange>& times,
@@ -209,7 +251,7 @@ int main()
 {
   // TO DO:
   // define settings, map, trading_economics_data and parameters
-  initialize_impactgen(settings, times, map, trading_economics_data);
+  initialize_impactgen(settings, times, trading_economics_data);
   generate_impact(parameters);
   return 0;
 }
