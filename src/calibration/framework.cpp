@@ -14,6 +14,13 @@ int event_flooding_months_to_observe[12] = {0, 0, 0, 0, 0, 0, 0, 1, 1, 1, 0, 0};
 int years_to_observe[10] = {2000, 2001, 2002, 2003, 2004, 2005, 2006, 2007, 2008, 2009};
 int year_validation = 2010;
 
+
+/** initialize_te_data
+    Function will initialize trading_economics_data by reference
+
+    @param trading_economics_data Type std::unordered_map<std::string, std::vector<float>>
+    @return void
+*/
 void initialize_te_data(std::unordered_map<std::string, std::vector<float>> &trading_economics_data)
 {
   // NLD: earliest data gathering for NLD is Jan-2001
@@ -116,6 +123,12 @@ void initialize_te_data(std::unordered_map<std::string, std::vector<float>> &tra
   }
 }
 
+/** initialize_times_data
+    Function will initialize times by reference
+
+    @param times Type std::vector<TimeRange>
+    @return void
+*/
 void initialize_times_data(std::vector<TimeRange> &times)
 {
   int tmp_idx = 0;
