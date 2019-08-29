@@ -58,8 +58,54 @@ std::vector<std::string> regions = {"USA", "CHN", "JPN", "DEU", "GBR", "FRA", "I
                                     "ARG", "ZAF", "SGP", "THA"};
 
 int num_params_per_region = 10;
+
+// TODO decide on float vs double throughout. Use using FloatType = ...?
+
 double params_min = 0.0;
 double params_max = 1.0;
+
+struct TimeRange {
+    int begin;
+    int count;
+};
+
+template<typename T>
+static T random_between(T a, T b) {
+    T random = static_cast<T>(rand()) / static_cast<T>(RAND_MAX);
+    T diff = b - a;
+    T r = random * diff;
+    return a + r;
+}
+
+/** is_leap_year
+    Function will return true or false of leap year, depending on year
+
+    @param year Type int
+    @return boolean result
+*/
+static inline bool is_leap_year(int year) { return (year % 400 == 0) || (year % 4 == 0 && year % 100 != 0); }
+
+/** get_number_of_days
+    Function will return total number of days for month, year combination
+
+    @param month Type int
+    @param year Type int
+    @return int result
+*/
+static int get_number_of_days(int month, int year) {
+    // leap year condition, if month is 2
+    if (month == 2) {
+        if (is_leap_year(year)) {
+            return 29;
+        }
+        return 28;
+    }
+    // months which has 31 days
+    if (month == 1 || month == 3 || month == 5 || month == 7 || month == 8 || month == 10 || month == 12) {
+        return 31;
+    }
+    return 30;
+}
 
 /** initialize_te_data
     Function will initialize trading_economics_data by reference
@@ -68,20 +114,18 @@ double params_max = 1.0;
    std::vector<float>>
     @return void
 */
-void initialize_te_data(std::unordered_map<std::string, std::vector<float>>& trading_economics_data) {
+static void initialize_te_data(std::unordered_map<std::string, std::vector<float>>& trading_economics_data) {
     // sector preference
     std::vector<std::string> sectors = {"Manufacturing Production", "Industrial Production", "Capacity Utilization", "TREQ",
                                         "Steel Production",         "Electricity Production"};
 
     std::string trading_economics_dir = "/p/projects/zeean/calibration/tradingeconomics_data/";
 
-    for (std::size_t i = 0; i < regions.size(); ++i) {
-        std::vector<double> tmp_val_vector;
-        trading_economics_data[regions[i]] = std::vector<double>();
-        for (std::size_t j = 0; j < sectors.size(); ++j) {
+    for (std::size_t i = 0; i < regions.size(); ++i) {  // TODO use for-each loop
+        std::vector<float> tmp_val_vector;
+        for (std::size_t j = 0; j < sectors.size(); ++j) {  // TODO use for-each loop
             std::ifstream ifile;
             std::string tmp_te_file = trading_economics_dir + "production_" + regions[i] + "_" + sectors[j] + ".csv";
-            ;
 
             ifile.open(tmp_te_file);
 
@@ -95,7 +139,7 @@ void initialize_te_data(std::unordered_map<std::string, std::vector<float>>& tra
                 // break;
                 std::string line;  // we read the full line here
                 int tmp_idx = 0;
-                while (std::getline(ifile, line))  // read the current line
+                while (std::getline(ifile, line))  // read the current line // TODO use csv-parser
                 {
                     if (tmp_idx > 0) {
                         std::istringstream iss{line};  // construct a string stream from line
@@ -110,29 +154,28 @@ void initialize_te_data(std::unordered_map<std::string, std::vector<float>>& tra
                         // map the tokens into our variables, this applies to your scenario
                         std::string month = tokens[0];        // first is a string, no need for further processing
                         double value = std::stod(tokens[1]);  // second is an double, convert it
-                        std::string frequency = tokens[3];    // same for fourth
+                        std::string frequency = tokens[3];    // same for fourth // TODO do we need these comments? do they add value?
 
-                        if (frequency != "Monthly" || std::stoi(month.substr(0, 4)) != tmp_year || std::stoi(month.substr(5, 2)) != tmp_month)
+                        if (frequency != "Monthly" || std::stoi(month.substr(0, 4)) != tmp_year || std::stoi(month.substr(5, 2)) != tmp_month) {
                             break;
-                        else {
-                            if (event_hurricane_months_to_observe[tmp_month - 1] || event_heatstress_months_to_observe[tmp_month - 1]
-                                || event_flooding_months_to_observe[tmp_month - 1]) {
-                                tmp_val_vector.push_back(value);
-                            }
+                        }
+                        if (event_hurricane_months_to_observe[tmp_month - 1] || event_heatstress_months_to_observe[tmp_month - 1]
+                            || event_flooding_months_to_observe[tmp_month - 1]) {
+                            tmp_val_vector.push_back(value);
+                        }
 
-                            if (tmp_month == 12) {
-                                tmp_month = 1;
-                                tmp_year++;
-                            } else {
-                                tmp_month++;
-                            }
+                        if (tmp_month == 12) {
+                            tmp_month = 1;
+                            tmp_year++;
+                        } else {
+                            tmp_month++;
                         }
                     }
                     tmp_idx++;
                 }
             }
             if (tmp_val_vector.size() > 0) {
-                trading_economics_data[regions[i]] = tmp_val_vector;
+                trading_economics_data.emplace(regions[i], tmp_val_vector);
                 break;
             }
         }
@@ -157,7 +200,7 @@ void initialize_te_data(std::unordered_map<std::string, std::vector<float>>& tra
     @param times Type std::vector<TimeRange>
     @return void
 */
-void initialize_times(std::vector<TimeRange>& times) {
+static void initialize_times(std::vector<TimeRange>& times) {
     int tmp_idx = 0;
     for (int i = 0; i < 10; ++i) {
         for (int j = 0; j < 12; ++j) {
@@ -176,72 +219,17 @@ void initialize_times(std::vector<TimeRange>& times) {
     @param times Type std::vector<TimeRange>
     @return void
 */
-void initialize_parameters(std::unordered_map<std::string, std::vector<float>>& parameters) {
+static void initialize_parameters(std::unordered_map<std::string, std::vector<float>>& parameters) {
     for (std::size_t i = 0; i < regions.size(); ++i) {
-        std::vector<double> tmp_params_vector;
-        parameters[regions[i]] = std::vector<double>();
+        std::vector<float> tmp_params_vector;
         for (int j = 0; j < num_params_per_region; j++) {
-            tmp_params_vector.push_back(RandomFloat(params_min, params_max));
+            tmp_params_vector.push_back(random_between(params_min, params_max));
         }
-        parameters[regions[i]] = tmp_params_vector;
+        parameters.emplace(regions[i], tmp_params_vector);
     }
 }
 
-struct TimeRange {
-    int begin;
-    int count;
-};
-
-/** get_number_of_days
-    Function will return total number of days for month, year combination
-
-    @param month Type int
-    @param year Type int
-    @return int result
-*/
-int get_number_of_days(int month, int year) {
-    // leap year condition, if month is 2
-    if (month == 2) {
-        if ((year % 400 == 0) || (year % 4 == 0 && year % 100 != 0))
-            return 29;
-        else
-            return 28;
-    }
-    // months which has 31 days
-    else if (month == 1 || month == 3 || month == 5 || month == 7 || month == 8 || month == 10 || month == 12)
-        return 31;
-    else
-        return 30;
-}
-
-/** check_leap_year
-    Function will return true or false of leap year, depending on year
-
-    @param year Type int
-    @return boolean result
-*/
-bool check_leap_year(int year) {
-    if ((year % 400 == 0) || (year % 4 == 0 && year % 100 != 0))
-        return true;
-    else
-        return false;
-}
-
-/** RandomFloat
-    Function will return a random double number in a certain range
-
-    @param a Type double
-    @param b Type double
-    @return double result
-*/
-double RandomFloat(double a, double b) {
-    double random = ((double)rand()) / (double)RAND_MAX;
-    double diff = b - a;
-    double r = random * diff;
-    return a + r;
-}
-
-float generate_impact(std::vector<float> parameters);  // unordered_map: <reg, param(s)>
+static float generate_impact(std::vector<float> parameters);  // unordered_map: <reg, param(s)>
 
 static void run(const settings::SettingsNode& settings) {
     impactgen::Output output(settings);
