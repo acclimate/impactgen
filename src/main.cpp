@@ -41,9 +41,9 @@ extern const char* impactgen_git_diff;
 #endif
 extern const char* impactgen_info;
 
-int event_hurricane_months_to_observe[12] = {0, 0, 0, 0, 0, 0, 0, 1, 1, 1, 0, 0};   // for Hurricane: Aug, Sep, Oct
-int event_heatstress_months_to_observe[12] = {0, 0, 0, 0, 0, 1, 1, 1, 0, 0, 0, 0};  // for Heatstress: Jun, Jul, Aug
-int event_flooding_months_to_observe[12] = {0, 0, 0, 0, 0, 0, 0, 1, 1, 1, 0, 0};    // for Flooding: Aug, Sep, Oct
+// int event_hurricane_months_to_observe[12] = {0, 0, 0, 0, 0, 0, 0, 1, 1, 1, 0, 0};   // for Hurricane: Aug, Sep, Oct
+// int event_heatstress_months_to_observe[12] = {0, 0, 0, 0, 0, 1, 1, 1, 0, 0, 0, 0};  // for Heatstress: Jun, Jul, Aug
+// int event_flooding_months_to_observe[12] = {0, 0, 0, 0, 0, 0, 0, 1, 1, 1, 0, 0};    // for Flooding: Aug, Sep, Oct
 int years_to_observe[10] = {2000, 2001, 2002, 2003, 2004, 2005, 2006, 2007, 2008, 2009};
 int year_validation = 2010;
 
@@ -61,8 +61,8 @@ int num_params_per_region = 10;
 
 // TODO decide on float vs double throughout. Use using FloatType = ...?
 
-double params_min = 0.0;
-double params_max = 1.0;
+float params_min = 0.0;
+float params_max = 1.0;
 
 struct TimeRange {
     int begin;
@@ -132,37 +132,31 @@ static void initialize_te_data(std::unordered_map<std::string, std::vector<float
             int tmp_year = 2000;
             int tmp_month = 1;
             if (!ifile.fail()) {  // if the file can be found
-                // std::cout << tmp_te_file << '\n';
-                // read and parse tmp_te_file as .csv
-                // generate tmp_val_vector from tmp_te_file
-                // trading_economics_data[regions[i]] = tmp_val_vector;
-                // break;
-                std::string line;  // we read the full line here
+                std::string line;
                 int tmp_idx = 0;
-                while (std::getline(ifile, line))  // read the current line // TODO use csv-parser
+                while (std::getline(ifile, line))
                 {
                     if (tmp_idx > 0) {
-                        std::istringstream iss{line};  // construct a string stream from line
+                        std::istringstream iss{line};
 
-                        // read the tokens from current line separated by comma
-                        std::vector<std::string> tokens;  // here we store the tokens
-                        std::string token;                // current token
+                        std::vector<std::string> tokens;
+                        std::string token;
                         while (std::getline(iss, token, '\t')) {
-                            tokens.push_back(token);  // add the token to the vector
+                            tokens.push_back(token);
                         }
-
-                        // map the tokens into our variables, this applies to your scenario
-                        std::string month = tokens[0];        // first is a string, no need for further processing
-                        double value = std::stod(tokens[1]);  // second is an double, convert it
-                        std::string frequency = tokens[3];    // same for fourth // TODO do we need these comments? do they add value?
+                        // map the tokens into our variables
+                        std::string month = tokens[0];
+                        float value = std::stod(tokens[1]);
+                        std::string frequency = tokens[3];
 
                         if (frequency != "Monthly" || std::stoi(month.substr(0, 4)) != tmp_year || std::stoi(month.substr(5, 2)) != tmp_month) {
                             break;
                         }
-                        if (event_hurricane_months_to_observe[tmp_month - 1] || event_heatstress_months_to_observe[tmp_month - 1]
-                            || event_flooding_months_to_observe[tmp_month - 1]) {
-                            tmp_val_vector.push_back(value);
-                        }
+                        // if (event_hurricane_months_to_observe[tmp_month - 1] || event_heatstress_months_to_observe[tmp_month - 1]
+                        //     || event_flooding_months_to_observe[tmp_month - 1]) {
+                        //     tmp_val_vector.push_back(value);
+                        // }
+                        tmp_val_vector.push_back(value);
 
                         if (tmp_month == 12) {
                             tmp_month = 1;
@@ -204,10 +198,11 @@ static void initialize_times(std::vector<TimeRange>& times) {
     int tmp_idx = 0;
     for (int i = 0; i < 10; ++i) {
         for (int j = 0; j < 12; ++j) {
-            int tmp_num_day = get_number_of_days(j, years_to_observe[i]);
-            if (event_hurricane_months_to_observe[j] || event_heatstress_months_to_observe[j] || event_flooding_months_to_observe[j]) {
-                times.push_back({tmp_idx + tmp_num_day, tmp_num_day});
-            }
+            // int tmp_num_day = get_number_of_days(j, years_to_observe[i]);
+            // if (event_hurricane_months_to_observe[j] || event_heatstress_months_to_observe[j] || event_flooding_months_to_observe[j]) {
+            //     times.push_back({tmp_idx + tmp_num_day, tmp_num_day});
+            // }
+            times.push_back({tmp_idx + tmp_num_day, tmp_num_day});
             tmp_idx += tmp_num_day;
         }
     }
