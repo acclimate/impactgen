@@ -252,7 +252,7 @@ static float loss_value(std::unordered_map<std::string, std::vector<float>> trad
         std::vector<float> tmp_forecast_vector = model_forecast_data[it.first];
         for (std::size_t j = 0; j < years_to_observe.size(); ++j)
         {
-            loss_sum += abs(tmp_te_vector[j]-tmp_forecast_vector[j]) / sqrt(pow(tmp_te_vector[j], 2) + pow(tmp_forecast_vector[j], 2));
+            loss_sum += abs(tmp_te_vector[j]-tmp_forecast_vector[j]) / sqrt(tmp_te_vector[j] * tmp_te_vector[j] + tmp_forecast_vector[j] * tmp_forecast_vector[j]);
         }
     }
     return loss_sum/float(trading_economics_data.size()*years_to_observe.size());
