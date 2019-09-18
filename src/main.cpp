@@ -448,12 +448,12 @@ int main(int argc, char* argv[]) {
 
                 // int num_calibration_iters = 100000;
                 // float min_loss_val = 10000.0;
-                // // TODO: 1. loop through num_calibration_iters
+                // // 1. loop through num_calibration_iters
                 // for (int i = 0; i < num_calibration_iters; i++)
                 // {
-                // // 2. generate random parameters,
-                // std::unordered_map<std::string, std::vector<float>> parameters;
-                // initialize_parameters(parameters);
+                //     // 2. generate random parameters,
+                //     std::unordered_map<std::string, std::vector<float>> parameters;
+                //     initialize_parameters(parameters);
                 //     // TODO: 3. calculate grid-wise damages/production losses
                 //     // TODO: 4. reaggregate damages/production losses to regional level and save in:
                 //     // std::unordered_map<std::string, std::vector<float>> model_forecast_data;
