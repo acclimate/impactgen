@@ -250,12 +250,12 @@ static float loss_value(std::unordered_map<std::string, std::vector<float>> trad
     for (auto it : trading_economics_data) {
         std::vector<float> tmp_te_vector = trading_economics_data[it.first];
         std::vector<float> tmp_forecast_vector = model_forecast_data[it.first];
-        for (std::size_t j = 0; j < years_to_observe.size(); ++j)
+        for (std::size_t j = 0; j < tmp_te_vector.size(); ++j)
         {
             loss_sum += abs(tmp_te_vector[j]-tmp_forecast_vector[j]) / sqrt(tmp_te_vector[j] * tmp_te_vector[j] + tmp_forecast_vector[j] * tmp_forecast_vector[j]);
         }
     }
-    return loss_sum/float(trading_economics_data.size()*years_to_observe.size());
+    return loss_sum/float(trading_economics_data.size()*trading_economics_data["USA"].size());
 }
 
 static float generate_impact(std::vector<float> parameters);  // unordered_map: <reg, param(s)>
