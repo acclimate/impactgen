@@ -41,28 +41,43 @@ extern const char* impactgen_git_diff;
 #endif
 extern const char* impactgen_info;
 
-// int event_hurricane_months_to_observe[12] = {0, 0, 0, 0, 0, 0, 0, 1, 1, 1, 0, 0};   // for Hurricane: Aug, Sep, Oct
-// int event_heatstress_months_to_observe[12] = {0, 0, 0, 0, 0, 1, 1, 1, 0, 0, 0, 0};  // for Heatstress: Jun, Jul, Aug
-// int event_flooding_months_to_observe[12] = {0, 0, 0, 0, 0, 0, 0, 1, 1, 1, 0, 0};    // for Flooding: Aug, Sep, Oct
-int years_to_observe[10] = {2000, 2001, 2002, 2003, 2004, 2005, 2006, 2007, 2008, 2009};
-int year_validation = 2010;
+YAML::Node config = YAML::LoadFile("config.yaml");  // starts out as null
+
+std::string trading_economics_dir = config["TE_dir"].as<std::string>();
+std::vector<std::string> regions = config["regions"].as<std::vector<std::string>>();
+std::vector<std::string> sectors = config["sectors"].as<std::vector<std::string>>();
+std::vector<int> years_to_observe = config["years_to_observe"].as<std::vector<int>>();
+int year_validation = config["year_validation"].as<int>();
+int num_params_per_region = config["num_params_per_region"].as<int>();
+float params_min = config["params_min"].as<float>();
+float params_max = config["params_max"].as<float>();
+
+// std::vector<std::string> sectors = {"Manufacturing Production", "Industrial Production", "Capacity Utilization", "TREQ",
+//                                     "Steel Production",         "Electricity Production"};
+//
+// std::string trading_economics_dir = "/p/projects/zeean/calibration/tradingeconomics_data/";
+// // int event_hurricane_months_to_observe[12] = {0, 0, 0, 0, 0, 0, 0, 1, 1, 1, 0, 0};   // for Hurricane: Aug, Sep, Oct
+// // int event_heatstress_months_to_observe[12] = {0, 0, 0, 0, 0, 1, 1, 1, 0, 0, 0, 0};  // for Heatstress: Jun, Jul, Aug
+// // int event_flooding_months_to_observe[12] = {0, 0, 0, 0, 0, 0, 0, 1, 1, 1, 0, 0};    // for Flooding: Aug, Sep, Oct
+// std::vector<int> years_to_observe = {2000, 2001, 2002, 2003, 2004, 2005, 2006, 2007, 2008, 2009};
+// int year_validation = 2010;
 
 // NLD: earliest data gathering for NLD is Jan-2001
 // this means missing data handling mechanism needs to be in place
 // CHE: has only quarterly data starting from Jan-2000.
 // SAU: only steel production has monthly data starting from Jan-2000, all other
 // are quarterly or start from 2016
-std::vector<std::string> regions = {"USA", "CHN", "JPN", "DEU", "GBR", "FRA", "IND", "ITA", "BRA", "CAN", "KOR", "RUS", "ESP", "AUS", "MEX", "IDN", "TUR",
-                                    "SAU",
-                                    // "NLD", "CHE",
-                                    "ARG", "ZAF", "SGP", "THA"};
-
-int num_params_per_region = 10;
-
-// TODO decide on float vs double throughout. Use using FloatType = ...?
-
-float params_min = 0.0;
-float params_max = 1.0;
+// std::vector<std::string> regions = {"USA", "CHN", "JPN", "DEU", "GBR", "FRA", "IND", "ITA", "BRA", "CAN", "KOR", "RUS", "ESP", "AUS", "MEX", "IDN", "TUR",
+//                                     "SAU",
+//                                     // "NLD", "CHE",
+//                                     "ARG", "ZAF", "SGP", "THA"};
+//
+// int num_params_per_region = 10;
+//
+// // TODO decide on float vs double throughout. Use using FloatType = ...?
+//
+// float params_min = 0.0;
+// float params_max = 1.0;
 
 struct TimeRange {
     int begin;
@@ -116,11 +131,6 @@ static int get_number_of_days(int month, int year) {
 */
 static void initialize_te_data(std::unordered_map<std::string, std::vector<float>>& trading_economics_data) {
     // sector preference
-    std::vector<std::string> sectors = {"Manufacturing Production", "Industrial Production", "Capacity Utilization", "TREQ",
-                                        "Steel Production",         "Electricity Production"};
-
-    std::string trading_economics_dir = "/p/projects/zeean/calibration/tradingeconomics_data/";
-
     for (std::size_t i = 0; i < regions.size(); ++i) {  // TODO use for-each loop
         std::vector<float> tmp_val_vector;
         for (std::size_t j = 0; j < sectors.size(); ++j) {  // TODO use for-each loop
@@ -196,9 +206,9 @@ static void initialize_te_data(std::unordered_map<std::string, std::vector<float
 */
 static void initialize_times(std::vector<TimeRange>& times) {
     int tmp_idx = 0;
-    for (int i = 0; i < 10; ++i) {
+    for (std::size_t i = 0; i < years_to_observe.size(); ++i) {
         for (int j = 0; j < 12; ++j) {
-            // int tmp_num_day = get_number_of_days(j, years_to_observe[i]);
+            int tmp_num_day = get_number_of_days(j, years_to_observe[i]);
             // if (event_hurricane_months_to_observe[j] || event_heatstress_months_to_observe[j] || event_flooding_months_to_observe[j]) {
             //     times.push_back({tmp_idx + tmp_num_day, tmp_num_day});
             // }
@@ -225,6 +235,29 @@ static void initialize_parameters(std::unordered_map<std::string, std::vector<fl
 }
 
 static float generate_impact(std::vector<float> parameters);  // unordered_map: <reg, param(s)>
+
+/** save_configs
+    Function will save the config parameters to a output config YAML file
+
+    @param output_config Type std::string output_config
+    @return void
+*/
+static void save_configs(std::string output_config) {
+    std::cout << "here" << std::endl;
+    YAML::Node config_backup;  // starts out as null
+
+    config_backup["TE_dir"] = trading_economics_dir;
+    config_backup["regions"] = regions;
+    config_backup["sectors"] = sectors;
+    config_backup["years_to_observe"] = years_to_observe;
+    config_backup["year_validation"] = year_validation;
+    config_backup["num_params_per_region"] = num_params_per_region;
+    config_backup["params_min"] = params_min;
+    config_backup["params_max"] = params_max;
+
+    std::ofstream fout(output_config);
+    fout << config_backup;
+}
 
 static void run(const settings::SettingsNode& settings) {
     impactgen::Output output(settings);
@@ -335,6 +368,7 @@ static void print_usage(const char* program_name) {
                  "\n\n"
                  "Authors: Sven Willner <sven.willner@pik-potsdam.de>\n"
                  "         Kilian Kuhla <kilian.kuhla@pik-potsdam.de>\n"
+                 "         Jiacheng Yao <jiacheng@pik-potsdam.de>\n"
                  "\n"
                  "Usage:   "
               << program_name
@@ -392,6 +426,10 @@ int main(int argc, char* argv[]) {
             // initialize parameters
             std::unordered_map<std::string, std::vector<float>> parameters;
             initialize_parameters(parameters);
+
+            // save config parameters
+            // save_configs("config_backup_test.yaml");
+
 #ifndef DEBUG
         } catch (std::runtime_error& ex) {
             std::cerr << ex.what() << std::endl;
