@@ -446,16 +446,14 @@ int main(int argc, char* argv[]) {
                 std::vector<TimeRange> times;
                 initialize_times(times);
 
-                // initialize parameters
-                std::unordered_map<std::string, std::vector<float>> parameters;
-                initialize_parameters(parameters);
-
                 // int num_calibration_iters = 100000;
                 // float min_loss_val = 10000.0;
-                // TODO: 1. loop through num_calibration_iters
+                // // TODO: 1. loop through num_calibration_iters
                 // for (int i = 0; i < num_calibration_iters; i++)
                 // {
-                //     // TODO: 2. generate random parameters,
+                // // 2. generate random parameters,
+                // std::unordered_map<std::string, std::vector<float>> parameters;
+                // initialize_parameters(parameters);
                 //     // TODO: 3. calculate grid-wise damages/production losses
                 //     // TODO: 4. reaggregate damages/production losses to regional level and save in:
                 //     // std::unordered_map<std::string, std::vector<float>> model_forecast_data;
