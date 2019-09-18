@@ -25,6 +25,8 @@
 #include <string>
 #include <unordered_map>
 #include <vector>
+#include <cstdlib>
+#include <cmath>
 #include "Output.h"
 #include "helpers.h"
 #include "impacts/Flooding.h"
@@ -232,6 +234,28 @@ static void initialize_parameters(std::unordered_map<std::string, std::vector<fl
         }
         parameters.emplace(regions[i], tmp_params_vector);
     }
+}
+
+/** loss_value()
+    Function will calculate the loss_value by comparing trading_economics_data and model_forecast_data
+    currently loss_value is MPE (Mean Percentage Error)
+    @param trading_economics_data Type std::unordered_map<std::string, std::vector<float>>
+    @param model_forecast_data Type std::unordered_map<std::string, std::vector<float>>
+    @return float
+*/
+static float loss_value(std::unordered_map<std::string, std::vector<float>> trading_economics_data,
+                       std::unordered_map<std::string, std::vector<float>> model_forecast_data)
+{
+    float loss_sum = 0;
+    for (auto it : trading_economics_data) {
+        std::vector<float> tmp_te_vector = trading_economics_data[it.first];
+        std::vector<float> tmp_forecast_vector = model_forecast_data[it.first];
+        for (std::size_t j = 0; j < years_to_observe.size(); ++j)
+        {
+            loss_sum += abs(tmp_te_vector[j]-tmp_forecast_vector[j]) / sqrt(pow(tmp_te_vector[j], 2) + pow(tmp_forecast_vector[j], 2));
+        }
+    }
+    return loss_sum/float(trading_economics_data.size()*years_to_observe.size());
 }
 
 static float generate_impact(std::vector<float> parameters);  // unordered_map: <reg, param(s)>
