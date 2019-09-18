@@ -457,7 +457,7 @@ int main(int argc, char* argv[]) {
                 //     // TODO: 3. calculate grid-wise damages/production losses
                 //     // TODO: 4. reaggregate damages/production losses to regional level and save in:
                 //     // std::unordered_map<std::string, std::vector<float>> model_forecast_data;
-                //     // TODO: 5: calculate loss_value under the current parameter condition
+                //     // 5: calculate loss_value under the current parameter condition
                 //     // float tmp_loss = loss_value(trading_economics_data, model_forecast_data);
                 //     if (tmp_loss < min_loss_val)
                 //     {
