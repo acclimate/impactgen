@@ -402,6 +402,7 @@ static void print_usage(const char* program_name) {
                  "  -d, --diff     Print git diff output from compilation\n"
 #endif
                  "  -h, --help     Print this help text\n"
+                 "  -c, --calibration     Calibration Mode\n"
                  "  -v, --version  Print version"
               << std::endl;
 }
@@ -432,6 +433,44 @@ int main(int argc, char* argv[]) {
             if (arg == "-") {
                 std::cin >> std::noskipws;
                 run(settings::SettingsNode(std::make_unique<settings::YAML>(std::cin)));
+            } else if (arg == "--calibration" || arg == "-c") {
+                // If calibration mode, we won't need to input settingsfile, but generate settings
+                // either randomly, or based on result of Bayesian Optimization,
+                // currently generated only randomly
+
+                // initialize output data
+                std::unordered_map<std::string, std::vector<float>> trading_economics_data;
+                initialize_te_data(trading_economics_data);
+
+                // initialize times data
+                std::vector<TimeRange> times;
+                initialize_times(times);
+
+                // initialize parameters
+                std::unordered_map<std::string, std::vector<float>> parameters;
+                initialize_parameters(parameters);
+
+                // int num_calibration_iters = 100000;
+                // float min_loss_val = 10000.0;
+                // TODO: 1. loop through num_calibration_iters
+                // for (int i = 0; i < num_calibration_iters; i++)
+                // {
+                //     // TODO: 2. generate random parameters,
+                //     // TODO: 3. calculate grid-wise damages/production losses
+                //     // TODO: 4. reaggregate damages/production losses to regional level and save in:
+                //     // std::unordered_map<std::string, std::vector<float>> model_forecast_data;
+                //     // TODO: 5: calculate loss_value under the current parameter condition
+                //     // float tmp_loss = loss_value(trading_economics_data, model_forecast_data);
+                //     if (tmp_loss < min_loss_val)
+                //     {
+                //         min_loss = tmp_loss;
+                //         // TODO: 6: save current parameters as params_optimal
+                //     }
+                // }
+                // TODO: 7: save params_optimal to file
+
+                // save config parameters
+                // save_configs("config_backup_test.yaml");
             } else {
                 std::ifstream settings_file(arg);
                 if (!settings_file) {
@@ -439,20 +478,6 @@ int main(int argc, char* argv[]) {
                 }
                 run(settings::SettingsNode(std::make_unique<settings::YAML>(settings_file)));
             }
-            // initialize output data
-            std::unordered_map<std::string, std::vector<float>> trading_economics_data;
-            initialize_te_data(trading_economics_data);
-
-            // initialize times data
-            std::vector<TimeRange> times;
-            initialize_times(times);
-
-            // initialize parameters
-            std::unordered_map<std::string, std::vector<float>> parameters;
-            initialize_parameters(parameters);
-
-            // save config parameters
-            // save_configs("config_backup_test.yaml");
 
 #ifndef DEBUG
         } catch (std::runtime_error& ex) {
