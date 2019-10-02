@@ -120,7 +120,11 @@ static int get_number_of_days(int month, int year) {
    std::vector<float>>
     @return void
 */
-static void initialize_te_data(std::unordered_map<std::string, std::vector<float>>& trading_economics_data) {
+static void initialize_te_data(std::unordered_map<std::string, std::vector<float>>& trading_economics_data, settings::SettingsNode configs) {
+    std::string trading_economics_dir = configs["TE_dir"].as<std::string>();
+    std::vector<std::string> regions = configs["regions"].as<std::vector<std::string>>();
+    std::vector<std::string> sectors = configs["sectors"].as<std::vector<std::string>>();
+
     // sector preference
     for (std::size_t i = 0; i < regions.size(); ++i) {  // TODO use for-each loop
         std::vector<float> tmp_val_vector;
@@ -195,7 +199,9 @@ static void initialize_te_data(std::unordered_map<std::string, std::vector<float
     @param times Type std::vector<TimeRange>
     @return void
 */
-static void initialize_times(std::vector<TimeRange>& times) {
+static void initialize_times(std::vector<TimeRange>& times, settings::SettingsNode configs) {
+    std::vector<int> years_to_observe = configs["years_to_observe"].as<std::vector<int>>();
+
     int tmp_idx = 0;
     for (std::size_t i = 0; i < years_to_observe.size(); ++i) {
         for (int j = 0; j < 12; ++j) {
@@ -215,7 +221,12 @@ static void initialize_times(std::vector<TimeRange>& times) {
     @param times Type std::vector<TimeRange>
     @return void
 */
-static void initialize_parameters(std::unordered_map<std::string, std::vector<float>>& parameters) {
+static void initialize_parameters(std::unordered_map<std::string, std::vector<float>>& parameters, settings::SettingsNode configs) {
+    std::vector<std::string> regions = configs["regions"].as<std::vector<std::string>>();
+    int num_params_per_region = configs["num_params_per_region"].as<int>();
+    float params_min = configs["params_min"].as<float>();
+    float params_max = configs["params_max"].as<float>();
+
     for (std::size_t i = 0; i < regions.size(); ++i) {
         std::vector<float> tmp_params_vector;
         for (int j = 0; j < num_params_per_region; j++) {
@@ -418,16 +429,16 @@ int main(int argc, char* argv[]) {
                 if (!settings_file) {
                     throw std::runtime_error("Cannot open " + config_file);
                 }
-                settings::SettingsNode config = settings::SettingsNode(std::make_unique<settings::YAML>(settings_file));  // starts out as null
+                settings::SettingsNode configs = settings::SettingsNode(std::make_unique<settings::YAML>(settings_file));  // starts out as null
 
-                std::string trading_economics_dir = config["TE_dir"].as<std::string>();
-                std::vector<std::string> regions = config["regions"].as<std::vector<std::string>>();
-                std::vector<std::string> sectors = config["sectors"].as<std::vector<std::string>>();
-                std::vector<int> years_to_observe = config["years_to_observe"].as<std::vector<int>>();
-                int year_validation = config["year_validation"].as<int>();
-                int num_params_per_region = config["num_params_per_region"].as<int>();
-                float params_min = config["params_min"].as<float>();
-                float params_max = config["params_max"].as<float>();
+                // std::string trading_economics_dir = configs["TE_dir"].as<std::string>();
+                // std::vector<std::string> regions = configs["regions"].as<std::vector<std::string>>();
+                // std::vector<std::string> sectors = configs["sectors"].as<std::vector<std::string>>();
+                // std::vector<int> years_to_observe = configs["years_to_observe"].as<std::vector<int>>();
+                // int year_validation = configs["year_validation"].as<int>();
+                // int num_params_per_region = configs["num_params_per_region"].as<int>();
+                // float params_min = configs["params_min"].as<float>();
+                // float params_max = configs["params_max"].as<float>();
 
 
                 // If calibration mode, we won't need to input settingsfile, but generate settings
@@ -436,11 +447,11 @@ int main(int argc, char* argv[]) {
 
                 // initialize output data
                 std::unordered_map<std::string, std::vector<float>> trading_economics_data;
-                initialize_te_data(trading_economics_data);
+                initialize_te_data(trading_economics_data, configs);
 
                 // initialize times data
                 std::vector<TimeRange> times;
-                initialize_times(times);
+                initialize_times(times, configs);
 
                 // int num_calibration_iters = 100000;
                 // float min_loss_val = 10000.0;
