@@ -418,7 +418,7 @@ int main(int argc, char* argv[]) {
                 if (!settings_file) {
                     throw std::runtime_error("Cannot open " + config_file);
                 }
-                settings::SettingsNode config = settings::SettingsNode(std::make_unique<settings::YAML>(config_file));  // starts out as null
+                settings::SettingsNode config = settings::SettingsNode(std::make_unique<settings::YAML>(settings_file));  // starts out as null
 
                 std::string trading_economics_dir = config["TE_dir"].as<std::string>();
                 std::vector<std::string> regions = config["regions"].as<std::vector<std::string>>();
