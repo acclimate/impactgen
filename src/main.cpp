@@ -432,9 +432,9 @@ int main(int argc, char* argv[]) {
                 settings::SettingsNode configs = settings::SettingsNode(std::make_unique<settings::YAML>(settings_file));  // starts out as null
 
                 // std::string trading_economics_dir = configs["TE_dir"].as<std::string>();
-                // std::vector<std::string> regions = configs["regions"].as<std::vector<std::string>>();
-                // std::vector<std::string> sectors = configs["sectors"].as<std::vector<std::string>>();
-                // std::vector<int> years_to_observe = configs["years_to_observe"].as<std::vector<int>>();
+                // auto regions = configs["regions"].to_vector<std::string>();
+                // auto sectors = configs["sectors"].to_vector<std::string>();
+                // auto years_to_observe = configs["years_to_observe"].to_vector<int>();
                 // int year_validation = configs["year_validation"].as<int>();
                 // int num_params_per_region = configs["num_params_per_region"].as<int>();
                 // float params_min = configs["params_min"].as<float>();
