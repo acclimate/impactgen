@@ -122,8 +122,8 @@ static int get_number_of_days(int month, int year) {
 */
 static void initialize_te_data(std::unordered_map<std::string, std::vector<float>>& trading_economics_data, settings::SettingsNode configs) {
     std::string trading_economics_dir = configs["TE_dir"].as<std::string>();
-    std::vector<std::string> regions = configs["regions"].as<std::vector<std::string>>();
-    std::vector<std::string> sectors = configs["sectors"].as<std::vector<std::string>>();
+    auto regions = configs["regions"].to_vector<std::string>();
+    auto sectors = configs["sectors"].to_vector<std::string>();
 
     // sector preference
     for (std::size_t i = 0; i < regions.size(); ++i) {  // TODO use for-each loop
@@ -200,7 +200,7 @@ static void initialize_te_data(std::unordered_map<std::string, std::vector<float
     @return void
 */
 static void initialize_times(std::vector<TimeRange>& times, settings::SettingsNode configs) {
-    std::vector<int> years_to_observe = configs["years_to_observe"].as<std::vector<int>>();
+    auto years_to_observe = configs["years_to_observe"].to_vector<int>();
 
     int tmp_idx = 0;
     for (std::size_t i = 0; i < years_to_observe.size(); ++i) {
