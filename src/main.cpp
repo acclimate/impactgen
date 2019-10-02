@@ -43,17 +43,6 @@ extern const char* impactgen_git_diff;
 #endif
 extern const char* impactgen_info;
 
-YAML::Node config = YAML::LoadFile("config.yaml");  // starts out as null
-
-std::string trading_economics_dir = config["TE_dir"].as<std::string>();
-std::vector<std::string> regions = config["regions"].as<std::vector<std::string>>();
-std::vector<std::string> sectors = config["sectors"].as<std::vector<std::string>>();
-std::vector<int> years_to_observe = config["years_to_observe"].as<std::vector<int>>();
-int year_validation = config["year_validation"].as<int>();
-int num_params_per_region = config["num_params_per_region"].as<int>();
-float params_min = config["params_min"].as<float>();
-float params_max = config["params_max"].as<float>();
-
 // std::vector<std::string> sectors = {"Manufacturing Production", "Industrial Production", "Capacity Utilization", "TREQ",
 //                                     "Steel Production",         "Electricity Production"};
 //
@@ -261,26 +250,15 @@ static float loss_value(std::unordered_map<std::string, std::vector<float>> trad
 static float generate_impact(std::vector<float> parameters);  // unordered_map: <reg, param(s)>
 
 /** save_configs
-    Function will save the config parameters to a output config YAML file
+    Function will save the config parameters inside settings to a output config YAML file
 
-    @param output_config Type std::string output_config
+    @param output_config Type std::string
+    @param settings Type settings::SettingsNode
     @return void
 */
-static void save_configs(std::string output_config) {
-    std::cout << "here" << std::endl;
-    YAML::Node config_backup;  // starts out as null
-
-    config_backup["TE_dir"] = trading_economics_dir;
-    config_backup["regions"] = regions;
-    config_backup["sectors"] = sectors;
-    config_backup["years_to_observe"] = years_to_observe;
-    config_backup["year_validation"] = year_validation;
-    config_backup["num_params_per_region"] = num_params_per_region;
-    config_backup["params_min"] = params_min;
-    config_backup["params_max"] = params_max;
-
+static void save_configs(std::string output_config, settings::SettingsNode settings) {
     std::ofstream fout(output_config);
-    fout << config_backup;
+    fout << settings;
 }
 
 static void run(const settings::SettingsNode& settings) {
@@ -434,6 +412,24 @@ int main(int argc, char* argv[]) {
                 std::cin >> std::noskipws;
                 run(settings::SettingsNode(std::make_unique<settings::YAML>(std::cin)));
             } else if (arg == "--calibration" || arg == "-c") {
+                std::string config_file = "config.yaml";
+
+                std::ifstream settings_file(config_file);
+                if (!settings_file) {
+                    throw std::runtime_error("Cannot open " + config_file);
+                }
+                settings::SettingsNode config = settings::SettingsNode(std::make_unique<settings::YAML>(config_file));  // starts out as null
+
+                std::string trading_economics_dir = config["TE_dir"].as<std::string>();
+                std::vector<std::string> regions = config["regions"].as<std::vector<std::string>>();
+                std::vector<std::string> sectors = config["sectors"].as<std::vector<std::string>>();
+                std::vector<int> years_to_observe = config["years_to_observe"].as<std::vector<int>>();
+                int year_validation = config["year_validation"].as<int>();
+                int num_params_per_region = config["num_params_per_region"].as<int>();
+                float params_min = config["params_min"].as<float>();
+                float params_max = config["params_max"].as<float>();
+
+
                 // If calibration mode, we won't need to input settingsfile, but generate settings
                 // either randomly, or based on result of Bayesian Optimization,
                 // currently generated only randomly
@@ -468,7 +464,7 @@ int main(int argc, char* argv[]) {
                 // TODO: 7: save params_optimal to file
 
                 // save config parameters
-                // save_configs("config_backup_test.yaml");
+                // save_configs("config_backup_test.yaml", config);
             } else {
                 std::ifstream settings_file(arg);
                 if (!settings_file) {
