@@ -475,7 +475,7 @@ int main(int argc, char* argv[]) {
                 // TODO: 7: save params_optimal to file
 
                 // save config parameters
-                // save_configs("config_backup_test.yaml", config);
+                // save_configs("config_backup_test.yaml", configs);
             } else {
                 std::ifstream settings_file(arg);
                 if (!settings_file) {
