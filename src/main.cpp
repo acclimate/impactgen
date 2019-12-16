@@ -113,6 +113,28 @@ static int get_number_of_days(int month, int year) {
     return 30;
 }
 
+/** initialize_times
+    Function will initialize times by reference
+
+    @param times Type std::vector<TimeRange>
+    @return void
+*/
+static void initialize_times(std::vector<TimeRange>& times, settings::SettingsNode configs) {
+    auto years_to_observe = configs["years_to_observe"].to_vector<int>();
+
+    int tmp_idx = 0;
+    for (std::size_t i = 0; i < years_to_observe.size(); ++i) {
+        for (int j = 0; j < 12; ++j) {
+            int tmp_num_day = get_number_of_days(j+1, years_to_observe[i]);
+            // if (event_hurricane_months_to_observe[j] || event_heatstress_months_to_observe[j] || event_flooding_months_to_observe[j]) {
+            //     times.push_back({tmp_idx + tmp_num_day, tmp_num_day});
+            // }
+            times.push_back({tmp_idx, tmp_num_day});
+            tmp_idx += tmp_num_day;
+        }
+    }
+}
+
 /** initialize_te_data
     Function will initialize trading_economics_data by reference
 
@@ -120,7 +142,9 @@ static int get_number_of_days(int month, int year) {
    std::vector<float>>
     @return void
 */
-static void initialize_te_data(std::unordered_map<std::string, std::vector<float>>& trading_economics_data, settings::SettingsNode configs) {
+
+// TODO cleanup, classes etc
+static void initialize_te_data(std::unordered_map<std::string, std::vector<float>>& trading_economics_data, settings::SettingsNode configs, std::vector<TimeRange> times) {
     std::string trading_economics_dir = configs["TE_dir"].as<std::string>();
     auto regions = configs["regions"].to_vector<std::string>();
     auto sectors = configs["sectors"].to_vector<std::string>();
@@ -134,11 +158,15 @@ static void initialize_te_data(std::unordered_map<std::string, std::vector<float
 
             ifile.open(tmp_te_file);
 
-            int tmp_year = 2000;
-            int tmp_month = 1;
             if (!ifile.fail()) {  // if the file can be found
                 std::string line;
                 int tmp_idx = 0;
+                int tmp_times_idx = 0;
+
+                int begin_year = 2000;
+                int begin_month = 1;
+                int tmp_year = begin_year;
+                int tmp_month = begin_month;
                 while (std::getline(ifile, line))
                 {
                     if (tmp_idx > 0) {
@@ -161,8 +189,14 @@ static void initialize_te_data(std::unordered_map<std::string, std::vector<float
                         //     || event_flooding_months_to_observe[tmp_month - 1]) {
                         //     tmp_val_vector.push_back(value);
                         // }
-                        tmp_val_vector.push_back(value);
+                        int times_tmp_year = begin_year + int(times[tmp_times_idx].begin/(365));
+                        int times_tmp_month = begin_month + int(times[tmp_times_idx].begin%(365)/30);
 
+                        if (times_tmp_year == tmp_year && times_tmp_month == tmp_month)
+                        {
+                            tmp_val_vector.push_back(value);
+                            tmp_times_idx++;
+                        }
                         if (tmp_month == 12) {
                             tmp_month = 1;
                             tmp_year++;
@@ -173,7 +207,7 @@ static void initialize_te_data(std::unordered_map<std::string, std::vector<float
                     tmp_idx++;
                 }
             }
-            if (tmp_val_vector.size() > 0) {
+            if (tmp_val_vector.size() == times.size()) {
                 trading_economics_data.emplace(regions[i], tmp_val_vector);
                 break;
             }
@@ -190,28 +224,6 @@ static void initialize_te_data(std::unordered_map<std::string, std::vector<float
         // {
         //   std::cout << regions[i] << "\t No suitable data found" << std::endl;
         // }
-    }
-}
-
-/** initialize_times
-    Function will initialize times by reference
-
-    @param times Type std::vector<TimeRange>
-    @return void
-*/
-static void initialize_times(std::vector<TimeRange>& times, settings::SettingsNode configs) {
-    auto years_to_observe = configs["years_to_observe"].to_vector<int>();
-
-    int tmp_idx = 0;
-    for (std::size_t i = 0; i < years_to_observe.size(); ++i) {
-        for (int j = 0; j < 12; ++j) {
-            int tmp_num_day = get_number_of_days(j, years_to_observe[i]);
-            // if (event_hurricane_months_to_observe[j] || event_heatstress_months_to_observe[j] || event_flooding_months_to_observe[j]) {
-            //     times.push_back({tmp_idx + tmp_num_day, tmp_num_day});
-            // }
-            times.push_back({tmp_idx + tmp_num_day, tmp_num_day});
-            tmp_idx += tmp_num_day;
-        }
     }
 }
 
@@ -445,13 +457,13 @@ int main(int argc, char* argv[]) {
                 // either randomly, or based on result of Bayesian Optimization,
                 // currently generated only randomly
 
-                // initialize output data
-                std::unordered_map<std::string, std::vector<float>> trading_economics_data;
-                initialize_te_data(trading_economics_data, configs);
-
                 // initialize times data
                 std::vector<TimeRange> times;
                 initialize_times(times, configs);
+
+                // initialize output data
+                std::unordered_map<std::string, std::vector<float>> trading_economics_data;
+                initialize_te_data(trading_economics_data, configs, times);
 
                 // int num_calibration_iters = 100000;
                 // float min_loss_val = 10000.0;
