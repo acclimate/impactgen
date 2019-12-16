@@ -163,7 +163,7 @@ static void initialize_te_data(std::unordered_map<std::string, std::vector<float
                 int tmp_idx = 0;
                 int tmp_times_idx = 0;
 
-                int begin_year = 2000;
+                int begin_year = 2001;
                 int begin_month = 1;
                 int tmp_year = begin_year;
                 int tmp_month = begin_month;
@@ -179,7 +179,7 @@ static void initialize_te_data(std::unordered_map<std::string, std::vector<float
                         }
                         // map the tokens into our variables
                         std::string month = tokens[0];
-                        float value = std::stod(tokens[1]);
+                        float value = std::stod(tokens[4]);
                         std::string frequency = tokens[3];
 
                         if (frequency != "Monthly" || std::stoi(month.substr(0, 4)) != tmp_year || std::stoi(month.substr(5, 2)) != tmp_month) {
@@ -189,8 +189,8 @@ static void initialize_te_data(std::unordered_map<std::string, std::vector<float
                         //     || event_flooding_months_to_observe[tmp_month - 1]) {
                         //     tmp_val_vector.push_back(value);
                         // }
-                        int times_tmp_year = begin_year + int(times[tmp_times_idx].begin/(365));
-                        int times_tmp_month = begin_month + int(times[tmp_times_idx].begin%(365)/30);
+                        int times_tmp_year = begin_year + int(times[tmp_times_idx].begin/365);
+                        int times_tmp_month = begin_month + int(float(times[tmp_times_idx].begin%365)/30.0+0.1);
 
                         if (times_tmp_year == tmp_year && times_tmp_month == tmp_month)
                         {
