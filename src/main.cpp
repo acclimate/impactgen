@@ -113,6 +113,8 @@ static int get_number_of_days(int month, int year) {
     return 30;
 }
 
+// TODO for all years, integrate months_to_observe
+// TODO also for test year
 /** initialize_times
     Function will initialize times by reference
 
@@ -120,19 +122,49 @@ static int get_number_of_days(int month, int year) {
     @return void
 */
 static void initialize_times(std::vector<TimeRange>& times, settings::SettingsNode configs) {
-    auto years_to_observe = configs["years_to_observe"].to_vector<int>();
-
+    YAML::Node test_yaml = YAML::LoadFile("config.yaml");
+    // auto years_to_observe = configs["years_to_observe"].to_vector<int>();
     int tmp_idx = 0;
-    for (std::size_t i = 0; i < years_to_observe.size(); ++i) {
-        for (int j = 0; j < 12; ++j) {
-            int tmp_num_day = get_number_of_days(j+1, years_to_observe[i]);
-            // if (event_hurricane_months_to_observe[j] || event_heatstress_months_to_observe[j] || event_flooding_months_to_observe[j]) {
-            //     times.push_back({tmp_idx + tmp_num_day, tmp_num_day});
-            // }
-            times.push_back({tmp_idx, tmp_num_day});
-            tmp_idx += tmp_num_day;
+    for (const auto& p : test_yaml["years_to_observe"]) {
+        // Here 'p' is a map node, not a pair.
+        for (const auto& key_value : p) {
+          // Now 'key_value' is a key/value pair, so you can read it:
+          YAML::Node key = key_value.first;
+          YAML::Node value = key_value.second;
+          int year = key.as<int>();
+          std::cout << year << "\n";
+
+          for (const auto& k_v : value) {
+              YAML::Node month = k_v.first;
+              YAML::Node v = k_v.second;
+              int month_int = month.as<int>();
+              int v_int = v.as<int>();
+              std::cout << month_int << ", " << v_int << "\n";
+
+              int tmp_num_day = get_number_of_days(month_int, year);
+              // if (event_hurricane_months_to_observe[j] || event_heatstress_months_to_observe[j] || event_flooding_months_to_observe[j]) {
+              //     times.push_back({tmp_idx + tmp_num_day, tmp_num_day});
+              // }
+              if (v_int)
+              {
+                  times.push_back({tmp_idx, tmp_num_day});
+              }
+              tmp_idx += tmp_num_day;
+          }
+          // ....
         }
     }
+
+    // for (std::size_t i = 0; i < years_to_observe.size(); ++i) {
+    //     for (int j = 0; j < 12; ++j) {
+    //         int tmp_num_day = get_number_of_days(j+1, years_to_observe[i]);
+    //         // if (event_hurricane_months_to_observe[j] || event_heatstress_months_to_observe[j] || event_flooding_months_to_observe[j]) {
+    //         //     times.push_back({tmp_idx + tmp_num_day, tmp_num_day});
+    //         // }
+    //         times.push_back({tmp_idx, tmp_num_day});
+    //         tmp_idx += tmp_num_day;
+    //     }
+    // }
 }
 
 /** initialize_te_data
