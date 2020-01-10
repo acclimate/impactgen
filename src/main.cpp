@@ -19,14 +19,14 @@
 */
 
 #include <algorithm>
+#include <cmath>
+#include <cstdlib>
 #include <fstream>
 #include <iostream>
 #include <memory>
 #include <string>
 #include <unordered_map>
 #include <vector>
-#include <cstdlib>
-#include <cmath>
 #include "Output.h"
 #include "helpers.h"
 #include "impacts/Flooding.h"
@@ -75,6 +75,7 @@ struct TimeRange {
     int count;
 };
 
+// TODO use std::random_device instead
 template<typename T>
 static T random_between(T a, T b) {
     T random = static_cast<T>(rand()) / static_cast<T>(RAND_MAX);
@@ -89,7 +90,7 @@ static T random_between(T a, T b) {
     @param year Type int
     @return boolean result
 */
-static inline bool is_leap_year(int year) { return (year % 400 == 0) || (year % 4 == 0 && year % 100 != 0); }
+constexpr bool is_leap_year(int year) { return (year % 400 == 0) || (year % 4 == 0 && year % 100 != 0); }
 
 /** get_number_of_days
     Function will return total number of days for month, year combination
@@ -98,7 +99,7 @@ static inline bool is_leap_year(int year) { return (year % 400 == 0) || (year % 
     @param year Type int
     @return int result
 */
-static int get_number_of_days(int month, int year) {
+constexpr int get_number_of_days(int month, int year) {
     // leap year condition, if month is 2
     if (month == 2) {
         if (is_leap_year(year)) {
@@ -120,7 +121,8 @@ static int get_number_of_days(int month, int year) {
     @param times Type std::vector<TimeRange>
     @return void
 */
-static void initialize_times(std::vector<TimeRange>& times, settings::SettingsNode configs) {
+static std::vector<TimeRange> initialize_times(settings::SettingsNode configs) {
+    std::vector<TimeRange> times;
     int tmp_idx = 0;
     for (const auto& node : configs["years_to_observe"].as_sequence())
     {
@@ -142,6 +144,7 @@ static void initialize_times(std::vector<TimeRange>& times, settings::SettingsNo
             }
         }
     }
+    return times;
 }
 
 /** initialize_te_data
@@ -152,18 +155,19 @@ static void initialize_times(std::vector<TimeRange>& times, settings::SettingsNo
     @return void
 */
 
-// TODO cleanup, classes etc
-static void initialize_te_data(std::unordered_map<std::string, std::vector<float>>& trading_economics_data, settings::SettingsNode configs, std::vector<TimeRange> times) {
+// TODO move these functions to dedicated class
+static std::unordered_map<std::string, std::vector<float>> initialize_te_data(const settings::SettingsNode& configs, const std::vector<TimeRange>& times) {
+    std::unordered_map<std::string, std::vector<float>> trading_economics_data;
     std::string trading_economics_dir = configs["TE_dir"].as<std::string>();
     auto regions = configs["regions"].to_vector<std::string>();
     auto sectors = configs["sectors"].to_vector<std::string>();
 
     // sector preference
-    for (std::size_t i = 0; i < regions.size(); ++i) {  // TODO use for-each loop
+    for (const auto& region : regions) {
         std::vector<float> tmp_val_vector;
-        for (std::size_t j = 0; j < sectors.size(); ++j) {  // TODO use for-each loop
+        for (const auto& sector: sectors) {
             std::ifstream ifile;
-            std::string tmp_te_file = trading_economics_dir + "production_" + regions[i] + "_" + sectors[j] + ".csv";
+            std::string tmp_te_file = trading_economics_dir + "production_" + region + "_" + sector + ".csv";
 
             ifile.open(tmp_te_file);
 
@@ -217,23 +221,24 @@ static void initialize_te_data(std::unordered_map<std::string, std::vector<float
                 }
             }
             if (tmp_val_vector.size() == times.size()) {
-                trading_economics_data.emplace(regions[i], tmp_val_vector);
+                trading_economics_data.emplace(region, tmp_val_vector);
                 break;
             }
         }
-        // if (trading_economics_data[regions[i]].size()>0)
+        // if (trading_economics_data[region].size()>0)
         // {
-        //   std::cout << regions[i] << "\t";
-        //   for (auto j = trading_economics_data[regions[i]].begin(); j !=
-        //   trading_economics_data[regions[i]].end(); ++j)
+        //   std::cout << region << "\t";
+        //   for (auto j = trading_economics_data[region].begin(); j !=
+        //   trading_economics_data[region].end(); ++j)
         //     std::cout << *j << ' ';
         //   std::cout << std::endl;
         // }
         // else
         // {
-        //   std::cout << regions[i] << "\t No suitable data found" << std::endl;
+        //   std::cout << region << "\t No suitable data found" << std::endl;
         // }
     }
+    return trading_economics_data;
 }
 
 /** initialize_parameters
@@ -242,7 +247,8 @@ static void initialize_te_data(std::unordered_map<std::string, std::vector<float
     @param times Type std::vector<TimeRange>
     @return void
 */
-static void initialize_parameters(std::unordered_map<std::string, std::vector<float>>& parameters, settings::SettingsNode configs) {
+static std::unordered_map<std::string, std::vector<float>> initialize_parameters(const settings::SettingsNode& configs) {
+    std::unordered_map<std::string, std::vector<float>> parameters;
     std::vector<std::string> regions = configs["regions"].as<std::vector<std::string>>();
     int num_params_per_region = configs["num_params_per_region"].as<int>();
     float params_min = configs["params_min"].as<float>();
@@ -255,6 +261,8 @@ static void initialize_parameters(std::unordered_map<std::string, std::vector<fl
         }
         parameters.emplace(regions[i], tmp_params_vector);
     }
+
+    return parameters;
 }
 
 /** loss_value()
@@ -443,14 +451,14 @@ int main(int argc, char* argv[]) {
             if (arg == "-") {
                 std::cin >> std::noskipws;
                 run(settings::SettingsNode(std::make_unique<settings::YAML>(std::cin)));
-            } else if (arg == "--calibration" || arg == "-c") {
+            } else if (arg == "--calibration" || arg == "-c") {// TODO move block to dedicated function
                 std::string config_file = "config.yaml";
 
                 std::ifstream settings_file(config_file);
                 if (!settings_file) {
                     throw std::runtime_error("Cannot open " + config_file);
                 }
-                settings::SettingsNode configs = settings::SettingsNode(std::make_unique<settings::YAML>(settings_file));  // starts out as null
+                const auto configs = settings::SettingsNode(std::make_unique<settings::YAML>(settings_file));
 
                 // std::string trading_economics_dir = configs["TE_dir"].as<std::string>();
                 // auto regions = configs["regions"].to_vector<std::string>();
@@ -467,12 +475,10 @@ int main(int argc, char* argv[]) {
                 // currently generated only randomly
 
                 // initialize times data
-                std::vector<TimeRange> times;
-                initialize_times(times, configs);
+                const auto times = initialize_times(configs);
 
                 // initialize output data
-                std::unordered_map<std::string, std::vector<float>> trading_economics_data;
-                initialize_te_data(trading_economics_data, configs, times);
+                auto trading_economics_data = initialize_te_data(configs, times);
 
                 // int num_calibration_iters = 100000;
                 // float min_loss_val = 10000.0;
