@@ -124,8 +124,7 @@ constexpr int get_number_of_days(int month, int year) {
 static std::vector<TimeRange> initialize_times(settings::SettingsNode configs) {
     std::vector<TimeRange> times;
     int tmp_idx = 0;
-    for (const auto& node : configs["years_to_observe"].as_sequence())
-    {
+    for (const auto& node : configs["years_to_observe"].as_sequence()) {
         for (const auto& key_value : node.as_map()) {
             auto year = key_value.first;
             int year_int = std::stoi(year);
@@ -136,8 +135,7 @@ static std::vector<TimeRange> initialize_times(settings::SettingsNode configs) {
                 int v_int = v.as<int>();
 
                 int tmp_num_day = get_number_of_days(month_int, year_int);
-                if (v_int)
-                {
+                if (v_int) {
                     times.push_back({tmp_idx, tmp_num_day});
                 }
                 tmp_idx += tmp_num_day;
@@ -165,7 +163,7 @@ static std::unordered_map<std::string, std::vector<float>> initialize_te_data(co
     // sector preference
     for (const auto& region : regions) {
         std::vector<float> tmp_val_vector;
-        for (const auto& sector: sectors) {
+        for (const auto& sector : sectors) {
             std::ifstream ifile;
             std::string tmp_te_file = trading_economics_dir + "production_" + region + "_" + sector + ".csv";
 
@@ -180,8 +178,7 @@ static std::unordered_map<std::string, std::vector<float>> initialize_te_data(co
                 int begin_month = 1;
                 int tmp_year = begin_year;
                 int tmp_month = begin_month;
-                while (std::getline(ifile, line))
-                {
+                while (std::getline(ifile, line)) {
                     if (tmp_idx > 0) {
                         std::istringstream iss{line};
 
@@ -202,11 +199,10 @@ static std::unordered_map<std::string, std::vector<float>> initialize_te_data(co
                         //     || event_flooding_months_to_observe[tmp_month - 1]) {
                         //     tmp_val_vector.push_back(value);
                         // }
-                        int times_tmp_year = begin_year + int(times[tmp_times_idx].begin/365);
-                        int times_tmp_month = begin_month + int(float(times[tmp_times_idx].begin%365)/30.0+0.1);
+                        int times_tmp_year = begin_year + int(times[tmp_times_idx].begin / 365);
+                        int times_tmp_month = begin_month + int(float(times[tmp_times_idx].begin % 365) / 30.0 + 0.1);
 
-                        if (times_tmp_year == tmp_year && times_tmp_month == tmp_month)
-                        {
+                        if (times_tmp_year == tmp_year && times_tmp_month == tmp_month) {
                             tmp_val_vector.push_back(value);
                             tmp_times_idx++;
                         }
@@ -273,18 +269,17 @@ static std::unordered_map<std::string, std::vector<float>> initialize_parameters
     @return float
 */
 static float loss_value(std::unordered_map<std::string, std::vector<float>> trading_economics_data,
-                       std::unordered_map<std::string, std::vector<float>> model_forecast_data)
-{
+                        std::unordered_map<std::string, std::vector<float>> model_forecast_data) {
     float loss_sum = 0;
     for (auto it : trading_economics_data) {
         std::vector<float> tmp_te_vector = trading_economics_data[it.first];
         std::vector<float> tmp_forecast_vector = model_forecast_data[it.first];
-        for (std::size_t j = 0; j < tmp_te_vector.size(); ++j)
-        {
-            loss_sum += abs(tmp_te_vector[j]-tmp_forecast_vector[j]) / sqrt(tmp_te_vector[j] * tmp_te_vector[j] + tmp_forecast_vector[j] * tmp_forecast_vector[j]);
+        for (std::size_t j = 0; j < tmp_te_vector.size(); ++j) {
+            loss_sum +=
+                abs(tmp_te_vector[j] - tmp_forecast_vector[j]) / sqrt(tmp_te_vector[j] * tmp_te_vector[j] + tmp_forecast_vector[j] * tmp_forecast_vector[j]);
         }
     }
-    return loss_sum/float(trading_economics_data.size()*trading_economics_data["USA"].size());
+    return loss_sum / float(trading_economics_data.size() * trading_economics_data["USA"].size());
 }
 
 static float generate_impact(std::vector<float> parameters);  // unordered_map: <reg, param(s)>
@@ -451,7 +446,7 @@ int main(int argc, char* argv[]) {
             if (arg == "-") {
                 std::cin >> std::noskipws;
                 run(settings::SettingsNode(std::make_unique<settings::YAML>(std::cin)));
-            } else if (arg == "--calibration" || arg == "-c") {// TODO move block to dedicated function
+            } else if (arg == "--calibration" || arg == "-c") {  // TODO move block to dedicated function
                 std::string config_file = "config.yaml";
 
                 std::ifstream settings_file(config_file);
@@ -468,7 +463,6 @@ int main(int argc, char* argv[]) {
                 // int num_params_per_region = configs["num_params_per_region"].as<int>();
                 // float params_min = configs["params_min"].as<float>();
                 // float params_max = configs["params_max"].as<float>();
-
 
                 // If calibration mode, we won't need to input settingsfile, but generate settings
                 // either randomly, or based on result of Bayesian Optimization,
