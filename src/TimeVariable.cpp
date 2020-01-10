@@ -39,7 +39,7 @@ TimeVariable::TimeVariable(const netCDF::NcFile& file, const std::string& filena
     time_variable.getAtt("units").getValues(time_units);
     reference_time = ReferenceTime(time_units);
     times.resize(time_dimension.getSize());
-    std::vector<int> tmp(times.size());
+    std::vector<double> tmp(times.size());
     time_variable.getVar({0}, {time_dimension.getSize()}, &tmp[0]);
     std::transform(std::begin(tmp), std::end(tmp), std::begin(times), [&](int t) -> std::time_t { return reference_time.unreference(t + time_shift); });
 }

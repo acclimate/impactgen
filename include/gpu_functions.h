@@ -18,32 +18,25 @@
   <http://www.gnu.org/licenses/>.
 */
 
-#ifndef IMPACTGEN_GRIDDED_IMPACT_H
-#define IMPACTGEN_GRIDDED_IMPACT_H
+#include "cudatools.h"
 
-#include <unordered_map>
-#include <vector>
-#include "GeoGrid.h"
-#include "nvector.h"
-#include "settingsnode.h"
+namespace cudatools {
 
-namespace impactgen {
-
-class GriddedImpact {
-  protected:
-    nvector::Vector<int, 2> isoraster;
-    GeoGrid<float> isoraster_grid;
-    std::vector<int> regions;
-    nvector::Vector<int, 2> region_block_indices;
-    GeoGrid<float> region_block_grid;
-    std::vector<int> cumulative_region_block_sizes;
-
-    void read_isoraster(const settings::SettingsNode& isoraster_node, const std::unordered_map<std::string, std::size_t>& all_regions);
-    void calc_region_blocks(GeoGrid<float> grid);
-    template<typename T>
-    std::vector<T> linearize_grid_to_region_blocks(const GridView<T>& grid_view);
+struct ReductionBlock {
+    int first = 0;
+    int count = 0;
 };
 
-}  // namespace impactgen
+class BlockReducer {
+  protected:
+    int gpu_block_size;
+    cudatools::vector<float, true> gpu_block_out;              // size: gpu_block_count
+    cudatools::vector<ReductionBlock, true> reduction_blocks;  // size: reduction_block_count
+    cudatools::vector<int, true> reduction_block_indices;      // size: total
 
-#endif
+  public:
+    BlockReducer(const std::vector<int>& cumulative_reduction_block_sizes);
+    void reduce(cudatools::device_pointer<float> in, cudatools::device_pointer<float> out, unsigned int n);
+};
+
+}  // namespace cudatools

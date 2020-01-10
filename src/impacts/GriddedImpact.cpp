@@ -67,4 +67,54 @@ void GriddedImpact::read_isoraster(const settings::SettingsNode& isoraster_node,
     }
 }
 
+void GriddedImpact::calc_region_blocks(GeoGrid<float> grid) {
+    region_block_grid = grid;
+    region_block_indices.resize(-1, region_block_grid.lat_count, region_block_grid.lon_count);
+    cumulative_region_block_sizes.resize(regions.size(), 0);
+    GeoGrid<float> common_grid;
+    nvector::foreach_view(common_grid_view(common_grid, GridView<int>{isoraster, isoraster_grid}, GridView<int>{region_block_indices, region_block_grid}),
+                          [&](std::size_t /* lat_index */, std::size_t /* lon_index */, int region, int& index) {
+                              if (region < 0 || regions[region] < 0) {
+                                  return true;
+                              }
+                              auto& size = cumulative_region_block_sizes[region];
+                              index = size;
+                              ++size;
+                              return true;
+                          });
+    int sum = 0;
+    for (auto& size : cumulative_region_block_sizes) {
+        const auto tmp = size;
+        size = sum;
+        sum += tmp;
+    }
+    nvector::foreach_view_parallel(
+        common_grid_view(common_grid, GridView<int>{isoraster, isoraster_grid}, GridView<int>{region_block_indices, region_block_grid}),
+        [&](std::size_t /* lat_index */, std::size_t /* lon_index */, int region, int& index) {
+            if (region < 0 || regions[region] < 0 || index < 0) {
+                return;
+            }
+            index += cumulative_region_block_sizes[region];
+        });
+}
+
+template<typename T>
+std::vector<T> GriddedImpact::linearize_grid_to_region_blocks(const GridView<T>& grid_view) {
+    if (cumulative_region_block_sizes.empty()) {
+        return std::vector<T>();
+    }
+    std::vector<T> res(cumulative_region_block_sizes[cumulative_region_block_sizes.size() - 1]);
+    GeoGrid<float> common_grid;
+    nvector::foreach_view_parallel(common_grid_view(common_grid, grid_view, GridView<int>{region_block_indices, region_block_grid}),
+                                   [&](std::size_t /* lat_index */, std::size_t /* lon_index */, T value, int index) {
+                                       if (index >= 0) {
+                                           res[index] = value;
+                                       }
+                                   });
+    return res;
+}
+
+template std::vector<float> GriddedImpact::linearize_grid_to_region_blocks(const GridView<float>& grid_view);
+template std::vector<double> GriddedImpact::linearize_grid_to_region_blocks(const GridView<double>& grid_view);
+
 }  // namespace impactgen
