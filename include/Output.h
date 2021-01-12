@@ -58,8 +58,9 @@ class Output {
     void include_forcing(const ForcingSeries<Forcing>& forcing);
     AgentForcing prepare_forcing() const;
     void open();
-    void close();
+    void close(ForcingType limit);
 };
+
 }  // namespace impactgen
 
 #endif

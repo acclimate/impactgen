@@ -139,7 +139,7 @@ static void run(const settings::SettingsNode& settings) {
         impact_bar.close(true);
         ++all_impacts_bar;
     }
-    output.close();
+    output.close(settings["limit"].as<impactgen::ForcingType>(0.0));
     all_impacts_bar.close();
 }
 

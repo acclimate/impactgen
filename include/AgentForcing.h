@@ -50,6 +50,7 @@ class AgentForcing {
     inline ForcingType& operator()(std::size_t sector, std::size_t region) { return data[sector * regions->size() + region]; }
     void include(const AgentForcing& other, ForcingCombination combination);
     constexpr const std::vector<ForcingType>& get_data() const { return data; }
+    void apply_limit(ForcingType limit);
 };
 
 }  // namespace impactgen

@@ -64,4 +64,10 @@ void AgentForcing::include(const AgentForcing& other, ForcingCombination combina
     }
 }
 
+void AgentForcing::apply_limit(ForcingType limit) {
+    for (std::size_t i = 0; i < data.size(); ++i) {
+        data[i] = std::max(data[i], limit);
+    }
+}
+
 }  // namespace impactgen

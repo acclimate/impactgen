@@ -21,9 +21,11 @@
 #include "Output.h"
 #include <algorithm>
 #include <ctime>
+#include <fstream>
 #include <iomanip>
 #include <sstream>
 #include <stdexcept>
+#include <string>
 #include "TimeVariable.h"
 #include "helpers.h"
 #include "version.h"
@@ -85,6 +87,12 @@ void Output::append_array(const settings::SettingsNode& node, std::vector<std::s
         std::vector<char*> out_(count);
         variable.getVar({0}, {count}, &out_[0]);
         out.insert(std::end(out), std::begin(out_), std::end(out_));
+    } else if (type == "text") {
+        std::ifstream infile(node["file"].as<std::string>());
+        std::string line;
+        while (std::getline(infile, line)) {
+            out.push_back(line);
+        }
     } else {
         throw std::runtime_error("Unknown input type " + type);
     }
@@ -127,7 +135,7 @@ void Output::open() {
     agent_forcing = std::make_unique<ForcingSeries<AgentForcing>>(AgentForcing(sectors, regions), reference_time);
 }
 
-void Output::close() {
+void Output::close(ForcingType limit) {
     TimeVariable time_variable(agent_forcing->get_sorted_times(), reference_time);
     time_variable.write_to_file(file, reference_time);
     const auto dim_time = file.getDim("time");
@@ -150,7 +158,11 @@ void Output::close() {
 
     const auto var_agent_forcing = file.addVar("agent_forcing", netCDF::NcType::nc_FLOAT, {dim_time, dim_sector, dim_region});
     for (std::size_t t = 0; t < time_variable.times.size(); ++t) {
-        var_agent_forcing.putVar({t, 0, 0}, {1, sectors.size(), regions.size()}, &agent_forcing->get_forcing(time_variable.times[t]).get_data()[0]);
+        auto& forcing = agent_forcing->get_forcing(time_variable.times[t]);
+        if (limit > 0.0) {
+            forcing.apply_limit(limit);
+        }
+        var_agent_forcing.putVar({t, 0, 0}, {1, sectors.size(), regions.size()}, &forcing.get_data()[0]);
     }
 }
 
