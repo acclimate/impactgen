@@ -38,8 +38,11 @@ class Flooding : public AgentImpact, public ProxiedImpact, public Impact {
     GeoGrid<float> last_grid;
     ForcingType recovery_exponent;
     ForcingType recovery_threshold;
+    ForcingType depth_threshold;
     std::string forcing_filename;
     std::string forcing_varname;
+    std::string threshold_filename;
+    std::string threshold_varname;
 
   public:
     Flooding(const settings::SettingsNode& impact_node, AgentForcing base_forcing_p);
