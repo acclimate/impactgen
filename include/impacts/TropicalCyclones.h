@@ -45,6 +45,9 @@ class TropicalCyclones : public AgentImpact, public ProxiedImpact, public Impact
     float velocity;
     std::mt19937 random_generator;
     std::unordered_map<std::string, std::pair<int, int>> seasons;
+    ForcingType recovery_exponent;
+    ForcingType recovery_threshold;
+    ForcingType windspeed_threshold;
 
   public:
     TropicalCyclones(const settings::SettingsNode& impact_node, AgentForcing base_forcing_p);

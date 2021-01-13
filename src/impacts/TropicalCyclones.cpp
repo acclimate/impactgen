@@ -65,6 +65,16 @@ TropicalCyclones::TropicalCyclones(  // NOLINT(cert-msc32-c,cert-msc51-cpp) [rep
     threshold = impact_node["threshold"].as<float>();
     velocity = impact_node["velocity"].as<float>();
 
+    if (impact_node.has("recovery")) {
+        recovery_exponent = impact_node["recovery"]["exponent"].as<ForcingType>();
+        recovery_threshold = impact_node["recovery"]["threshold"].as<ForcingType>();
+        windspeed_threshold = impact_node["recovery"]["windspeed_threshold"].as<ForcingType>();
+    } else {
+        recovery_exponent = 0;
+        recovery_threshold = 0;
+        windspeed_threshold = 1e10;
+    }
+
     random_generator.seed(impact_node["seed"].as<int>(0));
 
     read_sectors(impact_node);
@@ -167,6 +177,7 @@ void TropicalCyclones::join(Output& output, const TemplateFunction& template_fun
                 chunk_pos = 0;
                 event_bar.reset_eta();
             }
+            nvector::Vector<ForcingType, 2> current_forcing(0, forcing_grid.lat_count, forcing_grid.lon_count);
             nvector::View<ForcingType, 2> forcing_values(std::begin(chunk_buffer) + chunk_pos * forcing_grid.size(), forcing_grid.lat_count,
                                                          forcing_grid.lon_count);
             ++chunk_pos;
@@ -176,24 +187,26 @@ void TropicalCyclones::join(Output& output, const TemplateFunction& template_fun
             std::size_t lon_min = std::numeric_limits<std::size_t>::max();
             std::size_t lon_max = 0;
             GeoGrid<float> common_grid;
-            nvector::foreach_view(common_grid_view(common_grid, GridView<int>{isoraster, isoraster_grid}, GridView<ForcingType>{proxy_values, proxy_grid},
-                                                   GridView<ForcingType>{forcing_values, forcing_grid}),
-                                  [&](std::size_t lat_index, std::size_t lon_index, int i, ForcingType proxy_value, ForcingType forcing_v) {
-                                      if (forcing_v > 1e10 || std::isnan(forcing_v)) {
-                                          return true;
-                                      }
-                                      if (forcing_v >= threshold) {
-                                          lat_min = std::min(lat_min, lat_index);
-                                          lat_max = std::max(lat_max, lat_index);
-                                          lon_min = std::min(lon_min, lon_index);
-                                          lon_max = std::max(lon_max, lon_index);
-                                          if (proxy_value <= 0 || i < 0 || std::isnan(proxy_value)) {
-                                              return true;
-                                          }
-                                          region_forcing[i] += proxy_value;
-                                      }
-                                      return true;
-                                  });
+            nvector::foreach_view(
+                common_grid_view(common_grid, GridView<int>{isoraster, isoraster_grid}, GridView<ForcingType>{proxy_values, proxy_grid},
+                                 GridView<ForcingType>{forcing_values, forcing_grid}, GridView<ForcingType>{current_forcing, forcing_grid}),
+                [&](std::size_t lat_index, std::size_t lon_index, int i, ForcingType proxy_value, ForcingType forcing_v, ForcingType& current_forcing_v) {
+                    if (forcing_v > 1e10 || std::isnan(forcing_v)) {
+                        return true;
+                    }
+                    if (forcing_v >= threshold) {
+                        lat_min = std::min(lat_min, lat_index);
+                        lat_max = std::max(lat_max, lat_index);
+                        lon_min = std::min(lon_min, lon_index);
+                        lon_max = std::max(lon_max, lon_index);
+                        if (proxy_value <= 0 || i < 0 || std::isnan(proxy_value)) {
+                            return true;
+                        }
+                        current_forcing_v = 1;
+                        region_forcing[i] += proxy_value;
+                    }
+                    return true;
+                });
             AgentForcing forcing(base_forcing);
             for (std::size_t i = 0; i < regions.size(); ++i) {
                 const auto region = regions[i];
@@ -218,6 +231,44 @@ void TropicalCyclones::join(Output& output, const TemplateFunction& template_fun
             for (std::time_t t = start; t < start + duration; ++t) {
                 forcing_series.insert_forcing(base_time + t * 24 * 60 * 60, forcing, ForcingCombination::ADD);
             }
+
+            int recovery_duration = std::ceil(std::log(recovery_threshold) / std::log(recovery_exponent));
+            for (std::time_t t = start + duration; t < start + duration + recovery_duration; ++t) {
+                std::fill(std::begin(region_forcing), std::end(region_forcing), 0);
+                nvector::foreach_view(
+                    common_grid_view(common_grid, GridView<int>{isoraster, isoraster_grid}, GridView<ForcingType>{proxy_values, proxy_grid},
+                                     GridView<ForcingType>{forcing_values, forcing_grid}, GridView<ForcingType>{current_forcing, forcing_grid}),
+                    [&](std::size_t lat_index, std::size_t lon_index, int i, ForcingType proxy_value, ForcingType forcing_v, ForcingType& current_forcing_v) {
+                        if (forcing_v > 1e10 || std::isnan(forcing_v)) {
+                            return true;
+                        }
+                        if (forcing_v >= windspeed_threshold) {
+                            if (proxy_value <= 0 || i < 0 || std::isnan(proxy_value)) {
+                                return true;
+                            }
+                            current_forcing_v *= recovery_exponent;
+                            region_forcing[i] += proxy_value * current_forcing_v;
+                        }
+                        return true;
+                    });
+                AgentForcing forcing(base_forcing);
+                for (std::size_t i = 0; i < regions.size(); ++i) {
+                    const auto region = regions[i];
+                    if (region < 0) {
+                        continue;
+                    }
+                    const auto total_proxy_value = total_proxy[i];
+                    if (total_proxy_value <= 0) {
+                        continue;
+                    }
+                    const auto r = region_forcing[i];
+                    for (const auto sector : sectors) {
+                        forcing(sector, region) = (total_proxy_value - r) / total_proxy_value;
+                    }
+                }
+                forcing_series.insert_forcing(base_time + t * 24 * 60 * 60, forcing, ForcingCombination::ADD);
+            }
+
             ++event_bar;
         }
         event_bar.close(true);
