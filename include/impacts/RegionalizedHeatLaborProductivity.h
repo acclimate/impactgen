@@ -19,8 +19,8 @@
   <http://www.gnu.org/licenses/>.
 */
 
-#ifndef IMPACTGEN_WBGTHEATLABORPRODUCTIVITY_H
-#define IMPACTGEN_WBGTHEATLABORPRODUCTIVITY_H
+#ifndef IMPACTGEN_REGIONALIZEDHEATLABORPRODUCTIVITY_H
+#define IMPACTGEN_REGIONALIZEDHEATLABORPRODUCTIVITY_H
 
 #include <string>
 #include "GeoGrid.h"
@@ -33,16 +33,19 @@ namespace impactgen {
 
     class Output;
 
-    class WBGTHeatLaborProductivity : public AgentImpact, public ProxiedImpact, public Impact {
+    class RegionalizedHeatLaborProductivity : public AgentImpact, public ProxiedImpact, public Impact {
+
+    private:
+        settings::SettingsNode parameters;
+
     protected:
         std::string forcing_filename;
         std::string forcing_varname;
-        std::vector<ForcingType> alphas; //vector of factors of forcing strength for each sector, not used ATM in this use case
+        std::vector<bool> intense_work; //vector to differentiate between outdoor intense or indoor work
         ForcingType threshold;
-        std::vector<std::string> labour_intensity; //vector of labour intensity name for each sector
 
     public:
-        WBGTHeatLaborProductivity(const settings::SettingsNode &impact_node, AgentForcing base_forcing_p);
+        RegionalizedHeatLaborProductivity(const settings::SettingsNode &impact_node, AgentForcing base_forcing_p);
 
         void join(Output &output, const TemplateFunction &template_func) override;
 

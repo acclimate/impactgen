@@ -20,10 +20,9 @@
   <http://www.gnu.org/licenses/>.
 */
 
-#include "impacts/WBGTHeatLaborProductivity.h"
+#include "impacts/RegionalizedHeatLaborProductivity.h"
 #include <algorithm>
 #include <cmath>
-#include <iostream>
 #include <stdexcept>
 #include <string>
 #include "GeoGrid.h"
@@ -36,56 +35,22 @@
 
 namespace impactgen {
 
-    WBGTHeatLaborProductivity::WBGTHeatLaborProductivity(const settings::SettingsNode &impact_node,
-                                                         AgentForcing base_forcing_p)
+    RegionalizedHeatLaborProductivity::RegionalizedHeatLaborProductivity(const settings::SettingsNode &impact_node,
+                                                                         AgentForcing base_forcing_p)
             : AgentImpact(std::move(base_forcing_p)), ProxiedImpact(impact_node["proxy"]), Impact(impact_node) {
         forcing_filename = impact_node["day_temperature"]["file"].as<std::string>();
         forcing_varname = impact_node["day_temperature"]["variable"].as<std::string>();
-        threshold = impact_node["day_temperature"]["threshold"].as<ForcingType>();
+        parameters = impact_node["parameters"]; //load forcing parameters indexed by region
         const auto &all_sectors = base_forcing.get_sectors();
         for (const auto node: impact_node["sectors"].as_map()) {
             sectors.push_back(all_sectors.at(node.first));
-            alphas.push_back(node.second.as<ForcingType>());
+            intense_work.push_back(node.second.as<bool>()); //parameter for sector: TRUE=> intense (outodoors) or FALSE=> normal (indoors work)
         }
+
         read_isoraster(impact_node["isoraster"], base_forcing.get_regions());
     }
 
-    auto WBGTHeatLaborProductivity::calculate_forcing(ForcingType forcing_v, int sector_index) {
-        // sketch of a forcing function in line with Roson and Sartori 2016, doi.org/10.21642/JGEA.010202AF
-
-        ForcingType threshold_start_wbgt_impact = 26;
-        ForcingType threshold_maximum_wbgt_impact = 50;
-        ForcingType mimimum_productivity = 0.25;
-
-        if (labour_intensity[sector_index] == "intense") { //"agr" case from ibid
-            threshold_start_wbgt_impact = 26;
-            threshold_maximum_wbgt_impact = 36;
-        }
-        if (labour_intensity[sector_index] == "moderate") { //"man" case from ibid
-            threshold_start_wbgt_impact = 28;
-            threshold_maximum_wbgt_impact = 43;
-        }
-        if (labour_intensity[sector_index] == "low") { //"ser" case from ibid
-            threshold_start_wbgt_impact = 30;
-            threshold_maximum_wbgt_impact = 50;
-        }
-        //TODO; make all these constants variables of the forcing creation if flexibility is needed
-
-        ForcingType forcing = 0.0;
-        if (forcing_v < threshold_start_wbgt_impact) {
-            forcing = 0.0;
-        }
-        if (forcing_v > threshold_start_wbgt_impact && forcing_v < threshold_maximum_wbgt_impact) {
-            forcing = (1 - mimimum_productivity) / (threshold_maximum_wbgt_impact - threshold_start_wbgt_impact) *
-                      (forcing_v - threshold_start_wbgt_impact);
-        }
-        if (forcing_v > threshold_maximum_wbgt_impact) {
-            forcing = 1 - mimimum_productivity;
-        }
-        return ForcingType(1.0) - forcing;
-    }
-
-    void WBGTHeatLaborProductivity::join(Output &output, const TemplateFunction &template_func) {
+    void RegionalizedHeatLaborProductivity::join(Output &output, const TemplateFunction &template_func) {
         auto filename = fill_template(forcing_filename, template_func);
         netCDF::NcFile forcing_file;
         try {
@@ -115,6 +80,7 @@ namespace impactgen {
         std::vector<ForcingType> chunk_buffer(chunk_size *forcing_grid.size());
         progressbar::ProgressBar time_bar(time_variable.times.size(), filename, true);
         std::vector<ForcingType> region_forcing(regions.size());
+
         for (std::size_t t = 0; t < time_variable.times.size(); ++t) {
             if (chunk_pos == chunk_size) {
                 forcing_variable.getVar(
@@ -142,17 +108,41 @@ namespace impactgen {
                                           std::isnan(proxy_value)) {
                                           return true;
                                       }
+                                      const auto region = regions[i];
 
-                                      if (forcing_v > threshold) {
-                                          const auto region = regions[i];
-                                          if (region < 0) {
-                                              return true;
+                                      if (region < 0) {
+                                          return true;
+                                      }
+                                      for (std::size_t s = 0; s < sectors.size(); ++s) {
+
+                                          auto regions_map = base_forcing.get_regions();
+                                          std::string region_name = "";
+                                          for (auto entry: regions_map) {
+                                              if (entry.second == region) {
+                                                  region_name = entry.first;
+                                                  break;
+                                              }
+                                          } //TODO: more elegant way to get region name from index value?!
+
+
+                                          const settings::SettingsNode &region_parameters = parameters[region_name];
+
+                                          //TODO: differentiate sectors between indoor and outdoor work
+                                          ForcingType intercept = region_parameters["intercept"].as<ForcingType>();
+                                          ForcingType first_order_coefficient = region_parameters["first_order"].as<ForcingType>();
+                                          ForcingType second_order_coefficient = region_parameters["second_order"].as<ForcingType>();
+
+                                          if (intense_work[i]) {
+                                              intercept = region_parameters["intercept_intense"].as<ForcingType>();
+                                              first_order_coefficient = region_parameters["first_order_intense"].as<ForcingType>();
+                                              second_order_coefficient = region_parameters["second_order_intense"].as<ForcingType>();
                                           }
-                                          for (std::size_t s = 0; s < sectors.size(); ++s) {
-                                              forcing(sectors[s], region) +=
-                                                      std::min(ForcingType(1.0), calculate_forcing(forcing_v, s)) *
-                                                      proxy_value;
-                                          }
+                                          // calculate localized forcing as labour supply <= total productivity loss
+                                          ForcingType labour_supply = intercept + first_order_coefficient * forcing_v +
+                                                                      second_order_coefficient * forcing_v * forcing_v;
+
+                                          forcing(sectors[s], region) += std::min(ForcingType(1.0), labour_supply) *
+                                                                         proxy_value; //TODO: decide whether positive shock is possible
                                       }
                                       return true;
                                   });
@@ -175,5 +165,6 @@ namespace impactgen {
         output.include_forcing(forcing_series);
         time_bar.close(true);
     }
+
 
 }  // namespace impactgen

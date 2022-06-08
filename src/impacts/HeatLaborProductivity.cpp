@@ -76,6 +76,7 @@ void HeatLaborProductivity::join(Output& output, const TemplateFunction& templat
     std::vector<ForcingType> chunk_buffer(chunk_size * forcing_grid.size());
     progressbar::ProgressBar time_bar(time_variable.times.size(), filename, true);
     std::vector<ForcingType> region_forcing(regions.size());
+
     for (std::size_t t = 0; t < time_variable.times.size(); ++t) {
         if (chunk_pos == chunk_size) {
             forcing_variable.getVar(
