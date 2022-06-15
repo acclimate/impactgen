@@ -88,21 +88,21 @@ namespace impactgen {
             ForcingType intense_intercept;
             ForcingType intense_first_order_coefficient;
             ForcingType intense_second_order_coefficient;
-        }
+        };
 
         const auto& regions_map = base_forcing.get_regions();
         std::vector<RegionParameters> region_parameters(regions_map.size());
         for (const auto& region :regions_map) {
             const auto& region_name = region.first;
             const auto region_index = region.second;
-            const settings::SettingsNode &region_parameters = parameters[region_name];
+            const settings::SettingsNode &parameters_current_region = parameters[region_name];
             RegionParameters&  parameters = region_parameters[region_index];
-            parameters.intercept = region_parameters["intercept"].as<ForcingType>();
-            parameters.first_order_coefficient = region_parameters["first_order"].as<ForcingType>();
-            parameters.second_order_coefficient = region_parameters["second_order"].as<ForcingType>();
-            parameters.intense_intercept = region_parameters["intercept_intense"].as<ForcingType>();
-            parameters.intense_first_order_coefficient = region_parameters["first_order_intense"].as<ForcingType>();
-            parameters.intense_second_order_coefficient = region_parameters["second_order_intense"].as<ForcingType>();
+            parameters.intercept = parameters_current_region["intercept"].as<ForcingType>();
+            parameters.first_order_coefficient = parameters_current_region["first_order"].as<ForcingType>();
+            parameters.second_order_coefficient = parameters_current_region["second_order"].as<ForcingType>();
+            parameters.intense_intercept = parameters_current_region["intercept_intense"].as<ForcingType>();
+            parameters.intense_first_order_coefficient = parameters_current_region["first_order_intense"].as<ForcingType>();
+            parameters.intense_second_order_coefficient = parameters_current_region["second_order_intense"].as<ForcingType>();
         }
 
         for (std::size_t t = 0; t < time_variable.times.size(); ++t) {
