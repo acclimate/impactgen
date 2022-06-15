@@ -81,6 +81,30 @@ namespace impactgen {
         progressbar::ProgressBar time_bar(time_variable.times.size(), filename, true);
         std::vector<ForcingType> region_forcing(regions.size());
 
+        struct RegionParameters {
+            ForcingType intercept;
+            ForcingType first_order_coefficient;
+            ForcingType second_order_coefficient;
+            ForcingType intense_intercept;
+            ForcingType intense_first_order_coefficient;
+            ForcingType intense_second_order_coefficient;
+        }
+
+        const auto& regions_map = base_forcing.get_regions();
+        std::vector<RegionParameters> region_parameters(regions_map.size());
+        for (const auto& region :regions_map) {
+            const auto& region_name = region.first;
+            const auto region_index = region.second;
+            const settings::SettingsNode &region_parameters = parameters[region_name];
+            RegionParameters&  parameters = region_parameters[region_index];
+            parameters.intercept = region_parameters["intercept"].as<ForcingType>();
+            parameters.first_order_coefficient = region_parameters["first_order"].as<ForcingType>();
+            parameters.second_order_coefficient = region_parameters["second_order"].as<ForcingType>();
+            parameters.intense_intercept = region_parameters["intercept_intense"].as<ForcingType>();
+            parameters.intense_first_order_coefficient = region_parameters["first_order_intense"].as<ForcingType>();
+            parameters.intense_second_order_coefficient = region_parameters["second_order_intense"].as<ForcingType>();
+        }
+
         for (std::size_t t = 0; t < time_variable.times.size(); ++t) {
             if (chunk_pos == chunk_size) {
                 forcing_variable.getVar(
@@ -113,29 +137,17 @@ namespace impactgen {
                                       if (region < 0) {
                                           return true;
                                       }
+                                      const RegionParameters& parameters = region_parameters[region];
+
                                       for (std::size_t s = 0; s < sectors.size(); ++s) {
+                                          ForcingType intercept = parameters.intercept;
+                                          ForcingType first_order_coefficient = parameters.first_order_coefficient;
+                                          ForcingType second_order_coefficient = parameters.second_order_coefficient;
 
-                                          auto regions_map = base_forcing.get_regions();
-                                          std::string region_name = "";
-                                          for (auto entry: regions_map) {
-                                              if (entry.second == region) {
-                                                  region_name = entry.first;
-                                                  break;
-                                              }
-                                          } //TODO: more elegant way to get region name from index value?!
-
-
-                                          const settings::SettingsNode &region_parameters = parameters[region_name];
-
-                                          //TODO: differentiate sectors between indoor and outdoor work
-                                          ForcingType intercept = region_parameters["intercept"].as<ForcingType>();
-                                          ForcingType first_order_coefficient = region_parameters["first_order"].as<ForcingType>();
-                                          ForcingType second_order_coefficient = region_parameters["second_order"].as<ForcingType>();
-
-                                          if (intense_work[i]) {
-                                              intercept = region_parameters["intercept_intense"].as<ForcingType>();
-                                              first_order_coefficient = region_parameters["first_order_intense"].as<ForcingType>();
-                                              second_order_coefficient = region_parameters["second_order_intense"].as<ForcingType>();
+                                          if (intense_work[s]) {
+                                              intercept = parameters.intense_intercept;
+                                              first_order_coefficient = parameters.intense_first_order_coefficient;
+                                              second_order_coefficient = parameters.intense_second_order_coefficient;
                                           }
                                           // calculate localized forcing as labour supply <= total productivity loss
                                           ForcingType labour_supply = intercept + first_order_coefficient * forcing_v +
