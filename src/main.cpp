@@ -28,6 +28,7 @@
 #include "helpers.h"
 #include "impacts/Flooding.h"
 #include "impacts/HeatLaborProductivity.h"
+#include "impacts/RegionalizedHeatLaborProductivity.h"
 #include "impacts/TropicalCyclones.h"
 #include "progressbar.h"
 #include "settingsnode.h"
@@ -68,6 +69,10 @@ static void run(const settings::SettingsNode& settings) {
             case settings::hstring::hash("heat_labor_productivity"):
                 impact = std::make_unique<impactgen::HeatLaborProductivity>(impact_node, output.prepare_forcing());
                 impact_name = "Heat Labor Productivity";
+                break;
+            case settings::hstring::hash("regionalized_heat_labor_productivity"):
+                impact = std::make_unique<impactgen::RegionalizedHeatLaborProductivity>(impact_node, output.prepare_forcing());
+                impact_name = "Regionalized Heat Labor Productivity";
                 break;
             default:
                 throw std::runtime_error("Unsupported impact type '" + std::string(type) + "'");

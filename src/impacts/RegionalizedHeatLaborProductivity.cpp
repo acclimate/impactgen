@@ -149,9 +149,9 @@ namespace impactgen {
                                               first_order_coefficient = parameters.intense_first_order_coefficient;
                                               second_order_coefficient = parameters.intense_second_order_coefficient;
                                           }
-                                          // calculate localized forcing as labour supply <= total productivity loss
-                                          ForcingType labour_supply = intercept + first_order_coefficient * forcing_v +
-                                                                      second_order_coefficient * forcing_v * forcing_v;
+                                          // calculate localized forcing as log of labour supply <= total productivity loss, i.e need to exponentiate
+                                          ForcingType labour_supply = exp(intercept + first_order_coefficient * forcing_v +
+                                                                      second_order_coefficient * forcing_v * forcing_v);
 
                                           forcing(sectors[s], region) += std::min(ForcingType(1.0), labour_supply) *
                                                                          proxy_value; //TODO: decide whether positive shock is possible
