@@ -40,6 +40,7 @@ namespace impactgen {
             : AgentImpact(std::move(base_forcing_p)), ProxiedImpact(impact_node["proxy"]), Impact(impact_node) {
         forcing_filename = impact_node["day_temperature"]["file"].as<std::string>();
         forcing_varname = impact_node["day_temperature"]["variable"].as<std::string>();
+        unit = impact_node["day_temperature"]["unit"].as<std::string>(); //load unit to convert to degree C; K= degree Kelvin, C= degree Celsius
         parameters = impact_node["parameters"]; //load forcing parameters indexed by region
         const auto &all_sectors = base_forcing.get_sectors();
         for (const auto node: impact_node["sectors"].as_map()) {
@@ -132,6 +133,12 @@ namespace impactgen {
                                           std::isnan(proxy_value)) {
                                           return true;
                                       }
+
+                                      //unit conversion if forcing_v in degree K:
+                                      if (unit=="K"){
+                                          forcing_v = forcing_v- (float) 273.15;
+                                      }
+
                                       const auto region = regions[i];
 
                                       if (region < 0) {
@@ -150,7 +157,7 @@ namespace impactgen {
                                               second_order_coefficient = parameters.intense_second_order_coefficient;
                                           }
                                           // calculate localized forcing as log of labour supply <= total productivity loss, i.e need to exponentiate
-                                          ForcingType labour_supply = exp(intercept + first_order_coefficient * forcing_v +
+                                          ForcingType labour_supply = expf(intercept + first_order_coefficient * forcing_v +
                                                                       second_order_coefficient * forcing_v * forcing_v);
 
                                           forcing(sectors[s], region) += std::min(ForcingType(1.0), labour_supply) *

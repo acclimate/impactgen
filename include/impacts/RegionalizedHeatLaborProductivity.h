@@ -41,6 +41,7 @@ namespace impactgen {
     protected:
         std::string forcing_filename;
         std::string forcing_varname;
+        std::string unit;
         std::vector<bool> intense_work; //vector to differentiate between outdoor intense or indoor work
         ForcingType threshold;
 
@@ -50,6 +51,8 @@ namespace impactgen {
         void join(Output &output, const TemplateFunction &template_func) override;
 
         auto calculate_forcing(ForcingType forcing_v, int sector_index);
+
+
     };
 }  // namespace impactgen
 
