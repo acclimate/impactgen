@@ -104,6 +104,14 @@ namespace impactgen {
             parameters.intense_intercept = parameters_current_region["intercept_intense"].as<ForcingType>();
             parameters.intense_first_order_coefficient = parameters_current_region["first_order_intense"].as<ForcingType>();
             parameters.intense_second_order_coefficient = parameters_current_region["second_order_intense"].as<ForcingType>();
+
+            // check if parameter import correct
+            std::cout<<region_name;
+            std::cout<<parameters.first_order_coefficient;
+            std::cout<<parameters.second_order_coefficient;
+            std::cout<<parameters.intense_first_order_coefficient;
+            std::cout<<parameters.intense_second_order_coefficient;
+
         }
 
         for (std::size_t t = 0; t < time_variable.times.size(); ++t) {
@@ -142,18 +150,17 @@ namespace impactgen {
                                       }
                                       const RegionParameters& parameters_current_region = region_parameters[region];
 
-                                      for (std::size_t s = 0; s < sectors.size(); ++s) {
-                                          ForcingType intercept = parameters_current_region.intercept;
-                                          ForcingType first_order_coefficient = parameters_current_region.first_order_coefficient;
-                                          ForcingType second_order_coefficient = parameters_current_region.second_order_coefficient;
+                                      ForcingType intercept = parameters_current_region.intercept;
+                                      ForcingType first_order_coefficient = parameters_current_region.first_order_coefficient;
+                                      ForcingType second_order_coefficient = parameters_current_region.second_order_coefficient;
 
+                                      for (std::size_t s = 0; s < sectors.size(); ++s) {
                                           if (intense_work[s]) {
                                               intercept = parameters_current_region.intense_intercept;
                                               first_order_coefficient = parameters_current_region.intense_first_order_coefficient;
                                               second_order_coefficient = parameters_current_region.intense_second_order_coefficient;
                                           }
                                           // calculate localized forcing as log of labor supply <= total productivity loss, i.e need to exponentiate
-
                                           //unit conversion if forcing_v in degree K:
                                           ForcingType ln_labor_supply;
                                           if (unit=="K"){
@@ -184,7 +191,6 @@ namespace impactgen {
                 }
                 for (const auto sector: sectors) {
                     forcing(sector, region) = (total_proxy_value - forcing(sector, region)) / total_proxy_value;
-                    std::cout << ((total_proxy_value - forcing(sector, region)) / total_proxy_value);
                 }
             }
             ++time_bar;
