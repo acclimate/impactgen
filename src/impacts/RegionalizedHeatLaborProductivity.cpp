@@ -104,14 +104,6 @@ namespace impactgen {
             parameters.intense_intercept = parameters_current_region["intercept_intense"].as<ForcingType>();
             parameters.intense_first_order_coefficient = parameters_current_region["first_order_intense"].as<ForcingType>();
             parameters.intense_second_order_coefficient = parameters_current_region["second_order_intense"].as<ForcingType>();
-
-            // check if parameter import correct
-            std::cout<<region_name;
-            std::cout<<parameters.first_order_coefficient;
-            std::cout<<parameters.second_order_coefficient;
-            std::cout<<parameters.intense_first_order_coefficient;
-            std::cout<<parameters.intense_second_order_coefficient;
-
         }
 
         for (std::size_t t = 0; t < time_variable.times.size(); ++t) {
@@ -172,7 +164,7 @@ namespace impactgen {
                                                                  second_order_coefficient * forcing_v * forcing_v;
                                           }
                                                 
-                                          ForcingType labor_supply = expf(ln_labor_supply);
+                                          ForcingType labor_supply = (ForcingType) 1.0- expf(ln_labor_supply); //to calculate loss of labor supply
 
                                           forcing(sectors[s], region) += std::min(ForcingType(1.0), labor_supply) *
                                                                          proxy_value; //TODO: decide whether positive shock is possible
