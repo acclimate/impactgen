@@ -134,11 +134,7 @@ namespace impactgen {
                                           return true;
                                       }
 
-                                      //unit conversion if forcing_v in degree K:
-                                      if (unit=="K"){
-                                          forcing_v = forcing_v- (float) 273.15;
-                                      }
-
+                                      
                                       const auto region = regions[i];
 
                                       if (region < 0) {
@@ -156,11 +152,22 @@ namespace impactgen {
                                               first_order_coefficient = parameters.intense_first_order_coefficient;
                                               second_order_coefficient = parameters.intense_second_order_coefficient;
                                           }
-                                          // calculate localized forcing as log of labour supply <= total productivity loss, i.e need to exponentiate
-                                          ForcingType labour_supply = expf(intercept + first_order_coefficient * forcing_v +
-                                                                      second_order_coefficient * forcing_v * forcing_v);
+                                          // calculate localized forcing as log of labor supply <= total productivity loss, i.e need to exponentiate
 
-                                          forcing(sectors[s], region) += std::min(ForcingType(1.0), labour_supply) *
+                                          //unit conversion if forcing_v in degree K:
+                                          ForcingType ln_labor_supply = 0.0;
+                                          if (unit=="K"){
+                                              ln_labor_supply = intercept + first_order_coefficient * (forcing_v-273.15) +
+                                                                 second_order_coefficient * (forcing_v-273.15) * (forcing_v-273.15);
+                                          }
+                                          else {
+                                              ln_labor_supply = intercept + first_order_coefficient * forcing_v +
+                                                                 second_order_coefficient * forcing_v * forcing_v;
+                                          }
+                                                
+                                          ForcingType labor_supply = expf(ln_labor_supply);
+
+                                          forcing(sectors[s], region) += std::min(ForcingType(1.0), labor_supply) *
                                                                          proxy_value; //TODO: decide whether positive shock is possible
                                       }
                                       return true;
