@@ -45,7 +45,8 @@ namespace impactgen {
         const auto &all_sectors = base_forcing.get_sectors();
         for (const auto node: impact_node["sectors"].as_map()) {
             sectors.push_back(all_sectors.at(node.first));
-            intense_work.push_back(node.second.as<bool>()); //parameter for sector: TRUE=> intense (outodoors) or FALSE=> normal (indoors work)
+            intense_work.push_back(
+                    node.second.as<bool>()); //parameter for sector: TRUE=> intense (outdoor work in shadow) or FALSE=> normal (indoor work)
         }
 
         read_isoraster(impact_node["isoraster"], base_forcing.get_regions());
@@ -83,27 +84,27 @@ namespace impactgen {
         std::vector<ForcingType> region_forcing(regions.size());
 
         struct RegionParameters {
-            ForcingType intercept;
+            ForcingType t_optimal;
             ForcingType first_order_coefficient;
             ForcingType second_order_coefficient;
-            ForcingType intense_intercept;
+            ForcingType intense_t_optimal;
             ForcingType intense_first_order_coefficient;
             ForcingType intense_second_order_coefficient;
         };
 
-        const auto& regions_map = base_forcing.get_regions();
+        const auto &regions_map = base_forcing.get_regions();
         std::vector<RegionParameters> region_parameters(regions_map.size());
-        for (const auto& region :regions_map) {
-            const auto& region_name = region.first;
+        for (const auto &region: regions_map) {
+            const auto &region_name = region.first;
             const auto region_index = region.second;
             const settings::SettingsNode &parameters_current_region = parameters[region_name];
-            RegionParameters&  parameters = region_parameters[region_index];
-            parameters.intercept = parameters_current_region["intercept"].as<ForcingType>();
-            parameters.first_order_coefficient = parameters_current_region["first_order"].as<ForcingType>();
-            parameters.second_order_coefficient = parameters_current_region["second_order"].as<ForcingType>();
-            parameters.intense_intercept = parameters_current_region["intercept_intense"].as<ForcingType>();
-            parameters.intense_first_order_coefficient = parameters_current_region["first_order_intense"].as<ForcingType>();
-            parameters.intense_second_order_coefficient = parameters_current_region["second_order_intense"].as<ForcingType>();
+            RegionParameters &parameters_struct = region_parameters[region_index];
+            parameters_struct.t_optimal = parameters_current_region["T_optimal"].as<ForcingType>();
+            parameters_struct.first_order_coefficient = parameters_current_region["first_order"].as<ForcingType>();
+            parameters_struct.second_order_coefficient = parameters_current_region["second_order"].as<ForcingType>();
+            parameters_struct.intense_t_optimal = parameters_current_region["T_optimal_intense"].as<ForcingType>();
+            parameters_struct.intense_first_order_coefficient = parameters_current_region["first_order_intense"].as<ForcingType>();
+            parameters_struct.intense_second_order_coefficient = parameters_current_region["second_order_intense"].as<ForcingType>();
         }
 
         for (std::size_t t = 0; t < time_variable.times.size(); ++t) {
@@ -134,37 +135,43 @@ namespace impactgen {
                                           return true;
                                       }
 
-                                      
                                       const auto region = regions[i];
 
                                       if (region < 0) {
                                           return true;
                                       }
-                                      const RegionParameters& parameters_current_region = region_parameters[region];
+                                      const RegionParameters &parameters_current_region = region_parameters[region];
 
-                                      ForcingType intercept = parameters_current_region.intercept;
+                                      ForcingType t_opt = parameters_current_region.t_optimal;
                                       ForcingType first_order_coefficient = parameters_current_region.first_order_coefficient;
                                       ForcingType second_order_coefficient = parameters_current_region.second_order_coefficient;
 
                                       for (std::size_t s = 0; s < sectors.size(); ++s) {
                                           if (intense_work[s]) {
-                                              intercept = parameters_current_region.intense_intercept;
+                                              t_opt = parameters_current_region.intense_t_optimal;
                                               first_order_coefficient = parameters_current_region.intense_first_order_coefficient;
                                               second_order_coefficient = parameters_current_region.intense_second_order_coefficient;
                                           }
+
+                                          const ForcingType scale_by_max = (first_order_coefficient * (t_opt) + second_order_coefficient * (t_opt) *(t_opt));
+
                                           // calculate localized forcing as log of labor supply <= total productivity loss, i.e need to exponentiate
                                           //unit conversion if forcing_v in degree K:
-                                          ForcingType ln_labor_supply;
-                                          if (unit=="K"){
-                                              ln_labor_supply = intercept + first_order_coefficient * (forcing_v-273.15) +
-                                                                 second_order_coefficient * (forcing_v-273.15) * (forcing_v-273.15);
+                                          ForcingType ln_labor_supply_scaled_by_max;
+                                          if (unit == "K") {
+                                              ForcingType kelvin_to_celsius = 273.15;
+                                              ln_labor_supply_scaled_by_max =
+                                                      (first_order_coefficient * (forcing_v - kelvin_to_celsius) +
+                                                      second_order_coefficient * (forcing_v - kelvin_to_celsius) *
+                                                      (forcing_v - kelvin_to_celsius))
+                                                      /scale_by_max;
+                                          } else {
+                                              ln_labor_supply_scaled_by_max = (first_order_coefficient * forcing_v +
+                                                                second_order_coefficient * forcing_v * forcing_v)
+                                                                /scale_by_max;
                                           }
-                                          else {
-                                              ln_labor_supply = intercept + first_order_coefficient * forcing_v +
-                                                                 second_order_coefficient * forcing_v * forcing_v;
-                                          }
-                                                
-                                          ForcingType labor_supply = (ForcingType) 1.0- expf(ln_labor_supply); //to calculate loss of labor supply
+
+                                          ForcingType labor_supply = expf(ln_labor_supply_scaled_by_max);
 
                                           forcing(sectors[s], region) += std::min(ForcingType(1.0), labor_supply) *
                                                                          proxy_value; //TODO: decide whether positive shock is possible
