@@ -153,25 +153,23 @@ namespace impactgen {
                                               second_order_coefficient = parameters_current_region.intense_second_order_coefficient;
                                           }
 
-                                          const ForcingType scale_by_max = (first_order_coefficient * (t_opt) + second_order_coefficient * (t_opt) *(t_opt));
+                                          const ForcingType scale_by_max = expf(first_order_coefficient * (t_opt) + second_order_coefficient * (t_opt) *(t_opt));
 
                                           // calculate localized forcing as log of labor supply <= total productivity loss, i.e need to exponentiate
                                           //unit conversion if forcing_v in degree K:
-                                          ForcingType ln_labor_supply_scaled_by_max;
+                                          ForcingType ln_labor_supply;
                                           if (unit == "K") {
                                               ForcingType kelvin_to_celsius = 273.15;
-                                              ln_labor_supply_scaled_by_max =
+                                              ln_labor_supply =
                                                       (first_order_coefficient * (forcing_v - kelvin_to_celsius) +
                                                       second_order_coefficient * (forcing_v - kelvin_to_celsius) *
-                                                      (forcing_v - kelvin_to_celsius))
-                                                      /scale_by_max;
+                                                      (forcing_v - kelvin_to_celsius));
                                           } else {
-                                              ln_labor_supply_scaled_by_max = (first_order_coefficient * forcing_v +
-                                                                second_order_coefficient * forcing_v * forcing_v)
-                                                                /scale_by_max;
+                                              ln_labor_supply = (first_order_coefficient * forcing_v +
+                                                                second_order_coefficient * forcing_v * forcing_v);
                                           }
 
-                                          ForcingType labor_supply = expf(ln_labor_supply_scaled_by_max);
+                                          ForcingType labor_supply = expf(ln_labor_supply)/scale_by_max;
 
                                           forcing(sectors[s], region) += std::min(ForcingType(1.0), labor_supply) *
                                                                          proxy_value; //TODO: decide whether positive shock is possible
