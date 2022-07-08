@@ -158,7 +158,7 @@ namespace impactgen {
                                           // calculate localized forcing as log of labor supply <= total productivity loss, i.e need to exponentiate
                                           //unit conversion if forcing_v in degree K:
                                           ForcingType ln_labor_supply;
-                                          if (unit == "C") {
+                                          if (unit == "C") { //TODO: nicer way of unit checking
                                               ln_labor_supply = (first_order_coefficient * forcing_v +
                                                                  second_order_coefficient * forcing_v * forcing_v);
                                           } else {
@@ -170,9 +170,10 @@ namespace impactgen {
                                           }
 
                                           ForcingType labor_supply = expf(ln_labor_supply)/scale_by_max;
+                                          ForcingType reduction_labour_supply = std::max(ForcingType(0.0),1-labor_supply); //assumption: positive shock of labour supply excluded due to contracted working hours
 
-                                          forcing(sectors[s], region) += std::min(ForcingType(1.0), labor_supply) *
-                                                                         proxy_value; //assumption: positive shock of labour supply excluded due to contracted working hours
+                                          forcing(sectors[s], region) += std::min(ForcingType(1.0), reduction_labour_supply) *
+                                                                         proxy_value;
                                       }
                                       return true;
                                   });
