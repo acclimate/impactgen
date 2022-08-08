@@ -33,7 +33,7 @@ namespace impactgen {
 
     class Output;
 
-    class RegionalizedHeatLaborProductivity : public AgentImpact, public ProxiedImpact, public Impact {
+    class ParametersPerRegionHeatLaborProductivity : public AgentImpact, public ProxiedImpact, public Impact {
 
     private:
         settings::SettingsNode parameters;
@@ -42,11 +42,9 @@ namespace impactgen {
         std::string forcing_filename;
         std::string forcing_varname;
         std::string unit;
-        std::vector<bool> intense_work; //vector to differentiate between outdoor intense or indoor work
-        ForcingType threshold;
 
     public:
-        RegionalizedHeatLaborProductivity(const settings::SettingsNode &impact_node, AgentForcing base_forcing_p);
+        ParametersPerRegionHeatLaborProductivity(const settings::SettingsNode &impact_node, AgentForcing base_forcing_p);
 
         void join(Output &output, const TemplateFunction &template_func) override;
 
