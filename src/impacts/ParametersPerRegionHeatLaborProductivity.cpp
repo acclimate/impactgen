@@ -94,7 +94,7 @@ namespace impactgen {
             for (const auto node: parameters_current_region["sectors"].as_map()) {
                 parameters_struct.sectors.push_back(all_sectors.at(node.first));
                 parameters_struct.alphas.push_back(
-                        node.second.as<bool>()); //parameter for sector: TRUE=> intense (outdoor work in shadow) or FALSE=> normal (indoor work)
+                        node.second.as<ForcingType>()); //parameter for sector: increase of forcing per degree of temperature above threshold
             }
         }
 
