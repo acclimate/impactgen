@@ -93,8 +93,7 @@ namespace impactgen {
             parameters_struct.daily_temperature_threshold = parameters_current_region["daily_temperature_threshold"].as<ForcingType>();
             for (const auto node: parameters_current_region["sectors"].as_map()) {
                 parameters_struct.sectors.push_back(all_sectors.at(node.first));
-                parameters_struct.alphas.push_back(
-                        node.second.as<ForcingType>()); //parameter for sector: increase of forcing per degree of temperature above threshold
+                parameters_struct.alphas.push_back(node.second.as<ForcingType>()); //increase of forcing per degree of temperature above threshold
             }
         }
 
@@ -128,13 +127,12 @@ namespace impactgen {
 
                                       const auto region = regions[i];
                                       const RegionParameters &parameters_current_region = region_parameters[region];
-
                                       if (forcing_v > parameters_current_region.daily_temperature_threshold) {
                                           if (region < 0) {
                                               return true;
                                           }
-                                          for (std::size_t s = 0; s < sectors.size(); ++s) {
-                                              forcing(sectors[s], region) += std::min(ForcingType(1.0), parameters_current_region.alphas[s] * (forcing_v - parameters_current_region.daily_temperature_threshold)) * proxy_value;
+                                          for (std::size_t s = 0; s < parameters_current_region.sectors.size(); ++s) {
+                                              forcing(parameters_current_region.sectors[s], region) += std::min(ForcingType(1.0), parameters_current_region.alphas[s] * (forcing_v - parameters_current_region.daily_temperature_threshold)) * proxy_value;
                                           }
                                       }
                                       return true;
@@ -145,11 +143,12 @@ namespace impactgen {
                 if (region < 0) {
                     continue;
                 }
+                const RegionParameters &parameters_current_region = region_parameters[region];
                 const auto total_proxy_value = total_proxy[i];
                 if (total_proxy_value <= 0) {
                     continue;
                 }
-                for (const auto sector: sectors) {
+                for (const auto sector: parameters_current_region.sectors) {
                     forcing(sector, region) = (total_proxy_value - forcing(sector, region)) / total_proxy_value;
                 }
             }
