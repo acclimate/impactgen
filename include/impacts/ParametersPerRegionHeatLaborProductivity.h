@@ -23,6 +23,7 @@
 #define IMPACTGEN_REGIONALIZEDHEATLABORPRODUCTIVITY_H
 
 #include <string>
+
 #include "GeoGrid.h"
 #include "impacts/AgentImpact.h"
 #include "impacts/Impact.h"

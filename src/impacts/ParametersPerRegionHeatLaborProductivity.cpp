@@ -21,10 +21,12 @@
 */
 
 #include "impacts/ParametersPerRegionHeatLaborProductivity.h"
+
 #include <algorithm>
 #include <cmath>
 #include <stdexcept>
 #include <string>
+
 #include "GeoGrid.h"
 #include "Output.h"
 #include "TimeVariable.h"

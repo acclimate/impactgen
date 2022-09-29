@@ -24,6 +24,7 @@
 #include <cstddef>
 #include <iterator>
 #include <memory>
+#include <limits>
 #include <string>
 #include <vector>
 #include "netcdftools.h"

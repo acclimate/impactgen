@@ -17,7 +17,7 @@
 # License along with AcclimateImpact Preprocessing.  If not, see
 # <http://www.gnu.org/licenses/>.
 
-cmake_minimum_required(VERSION 2.8)
+cmake_minimum_required(VERSION 3.8)
 
 set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} ${CMAKE_SOURCE_DIR}/cmake)
 include(cmake/helpers.cmake)
