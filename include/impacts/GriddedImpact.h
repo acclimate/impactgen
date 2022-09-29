@@ -37,6 +37,11 @@ class GriddedImpact {
     std::vector<int> regions;
 
     void read_isoraster(const settings::SettingsNode& isoraster_node, const std::unordered_map<std::string, std::size_t>& all_regions);
+    static void read_isoraster(const settings::SettingsNode& isoraster_node,
+                               const std::unordered_map<std::string, std::size_t>& all_regions,
+                               nvector::Vector<int, 2>& isoraster_p,
+                               GeoGrid<float>& isoraster_grid_p,
+                               std::vector<int>& regions_p);
 };
 
 }  // namespace impactgen

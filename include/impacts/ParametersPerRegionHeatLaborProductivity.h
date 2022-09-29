@@ -32,27 +32,23 @@
 
 namespace impactgen {
 
-    class Output;
+class Output;
 
-    class ParametersPerRegionHeatLaborProductivity : public AgentImpact, public ProxiedImpact, public Impact {
+class ParametersPerRegionHeatLaborProductivity : public AgentImpact, public ProxiedImpact, public Impact {
+  protected:
+    settings::SettingsNode parameters;
+    settings::SettingsNode parameters_raster_node;
+    std::string forcing_filename;
+    std::string forcing_varname;
+    std::string unit;
 
-    private:
-        settings::SettingsNode parameters;
+  public:
+    ParametersPerRegionHeatLaborProductivity(const settings::SettingsNode& impact_node, AgentForcing base_forcing_p);
 
-    protected:
-        std::string forcing_filename;
-        std::string forcing_varname;
-        std::string unit;
+    void join(Output& output, const TemplateFunction& template_func) override;
 
-    public:
-        ParametersPerRegionHeatLaborProductivity(const settings::SettingsNode &impact_node, AgentForcing base_forcing_p);
-
-        void join(Output &output, const TemplateFunction &template_func) override;
-
-        auto calculate_forcing(ForcingType forcing_v, int sector_index);
-
-
-    };
+    auto calculate_forcing(ForcingType forcing_v, int sector_index);
+};
 }  // namespace impactgen
 
 #endif

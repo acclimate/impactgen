@@ -19,14 +19,24 @@
 */
 
 #include "impacts/GriddedImpact.h"
+
 #include <iostream>
 #include <stdexcept>
 #include <string>
+
 #include "netcdftools.h"
 
 namespace impactgen {
 
 void GriddedImpact::read_isoraster(const settings::SettingsNode& isoraster_node, const std::unordered_map<std::string, std::size_t>& all_regions) {
+    GriddedImpact::read_isoraster(isoraster_node, all_regions, isoraster, isoraster_grid, regions);
+}
+
+void GriddedImpact::read_isoraster(const settings::SettingsNode& isoraster_node,
+                                   const std::unordered_map<std::string, std::size_t>& all_regions,
+                                   nvector::Vector<int, 2>& isoraster_p,
+                                   GeoGrid<float>& isoraster_grid_p,
+                                   std::vector<int>& regions_p) {
     const auto& isoraster_filename = isoraster_node["file"].as<std::string>();
     const auto& isoraster_varname = isoraster_node["variable"].as<std::string>();
     netCDF::NcFile isoraster_file;
@@ -39,9 +49,9 @@ void GriddedImpact::read_isoraster(const settings::SettingsNode& isoraster_node,
     if (isoraster_variable.isNull()) {
         throw std::runtime_error("Variable '" + isoraster_varname + "' not found in " + isoraster_filename);
     }
-    isoraster_grid.read_from_netcdf(isoraster_file, isoraster_filename);
-    isoraster.resize(-1, isoraster_grid.lat_count, isoraster_grid.lon_count);
-    isoraster_variable.getVar({0, 0}, {isoraster_grid.lat_count, isoraster_grid.lon_count}, &isoraster.data()[0]);
+    isoraster_grid_p.read_from_netcdf(isoraster_file, isoraster_filename);
+    isoraster_p.resize(-1, isoraster_grid_p.lat_count, isoraster_grid_p.lon_count);
+    isoraster_variable.getVar({0, 0}, {isoraster_grid_p.lat_count, isoraster_grid_p.lon_count}, &isoraster_p.data()[0]);
     const auto& isoraster_index_varname = isoraster_node["index"].as<std::string>("index");
     const auto isoraster_regions_variable = isoraster_file.getVar(isoraster_index_varname);
     if (isoraster_regions_variable.isNull()) {
@@ -52,7 +62,7 @@ void GriddedImpact::read_isoraster(const settings::SettingsNode& isoraster_node,
     }
     std::vector<char*> isoraster_regions(isoraster_regions_variable.getDim(0).getSize());
     isoraster_regions_variable.getVar({0}, {isoraster_regions.size()}, &isoraster_regions[0]);
-    regions.reserve(isoraster_regions.size());
+    regions_p.reserve(isoraster_regions.size());
     bool verbose = isoraster_node["verbose"].as<bool>(false);
     for (const auto& region_name : isoraster_regions) {
         const auto& region = all_regions.find(region_name);
@@ -60,9 +70,9 @@ void GriddedImpact::read_isoraster(const settings::SettingsNode& isoraster_node,
             if (verbose) {
                 std::cerr << "Warning: ISO-Raster region " << region_name << " ignored\n";
             }
-            regions.push_back(-1);
+            regions_p.push_back(-1);
         } else {
-            regions.push_back(region->second);
+            regions_p.push_back(region->second);
         }
     }
 }
