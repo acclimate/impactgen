@@ -34,16 +34,16 @@ namespace impactgen {
 
 class Output;
 
-class ParametersPerRegionHeatLaborProductivity : public AgentImpact, public ProxiedImpact, public Impact {
-  protected:
+class AlphaBetaForcingPerSubregion : public AgentImpact, public ProxiedImpact, public Impact {
+protected:
     settings::SettingsNode parameters;
     settings::SettingsNode parameters_raster_node;
     std::string forcing_filename;
     std::string forcing_varname;
     std::string unit;
 
-  public:
-    ParametersPerRegionHeatLaborProductivity(const settings::SettingsNode& impact_node, AgentForcing base_forcing_p);
+public:
+    AlphaBetaForcingPerSubregion(const settings::SettingsNode &impact_node, AgentForcing base_forcing_p);
 
     void join(Output& output, const TemplateFunction& template_func) override;
 

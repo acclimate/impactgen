@@ -20,7 +20,7 @@
   <http://www.gnu.org/licenses/>.
 */
 
-#include "impacts/ParametersPerRegionHeatLaborProductivity.h"
+#include "impacts/AlphaBetaForcingPerSubregion.h"
 
 #include <algorithm>
 #include <cmath>
@@ -37,8 +37,9 @@
 
 namespace impactgen {
 
-ParametersPerRegionHeatLaborProductivity::ParametersPerRegionHeatLaborProductivity(const settings::SettingsNode& impact_node, AgentForcing base_forcing_p)
-    : AgentImpact(std::move(base_forcing_p)), ProxiedImpact(impact_node["proxy"]), Impact(impact_node) {
+    AlphaBetaForcingPerSubregion::AlphaBetaForcingPerSubregion(const settings::SettingsNode &impact_node,
+                                                               AgentForcing base_forcing_p)
+            : AgentImpact(std::move(base_forcing_p)), ProxiedImpact(impact_node["proxy"]), Impact(impact_node) {
     forcing_filename = impact_node["day_temperature"]["file"].as<std::string>();
     forcing_varname = impact_node["day_temperature"]["variable"].as<std::string>();
     unit = impact_node["day_temperature"]["unit"].as<std::string>();  // load unit to convert to degree C; K= degree Kelvin, C= degree Celsius
@@ -47,17 +48,17 @@ ParametersPerRegionHeatLaborProductivity::ParametersPerRegionHeatLaborProductivi
     read_isoraster(impact_node["isoraster"], base_forcing.get_regions());
 }
 
-void ParametersPerRegionHeatLaborProductivity::join(Output& output, const TemplateFunction& template_func) {
-    auto filename = fill_template(forcing_filename, template_func);
-    netCDF::NcFile forcing_file;
-    try {
-        forcing_file.open(filename, netCDF::NcFile::read);
-    } catch (netCDF::exceptions::NcException& e) {
-        throw std::runtime_error(filename + ": " + e.what());
-    }
-    const auto forcing_variable = forcing_file.getVar(forcing_varname);
-    if (forcing_variable.isNull()) {
-        throw std::runtime_error(filename + ": Variable '" + forcing_varname + "' not found");
+    void AlphaBetaForcingPerSubregion::join(Output &output, const TemplateFunction &template_func) {
+        auto filename = fill_template(forcing_filename, template_func);
+        netCDF::NcFile forcing_file;
+        try {
+            forcing_file.open(filename, netCDF::NcFile::read);
+        } catch (netCDF::exceptions::NcException &e) {
+            throw std::runtime_error(filename + ": " + e.what());
+        }
+        const auto forcing_variable = forcing_file.getVar(forcing_varname);
+        if (forcing_variable.isNull()) {
+            throw std::runtime_error(filename + ": Variable '" + forcing_varname + "' not found");
     }
     if (!check_dimensions(forcing_variable, {"time", "lat", "lon"}) && !check_dimensions(forcing_variable, {"time", "latitude", "longitude"})) {
         throw std::runtime_error(filename + " - " + forcing_varname + ": Unexpected dimensions");
@@ -81,10 +82,10 @@ void ParametersPerRegionHeatLaborProductivity::join(Output& output, const Templa
         std::size_t sector_index;
         ForcingType value;
     };
-    struct RegionParameters {
-        ForcingType daily_temperature_threshold;
-        std::vector<Alpha> alphas;  // vector of forcing parameter per sector
-    };
+        struct RegionParameters {
+            std::vector<Alpha> alphas;  // vector of forcing slopes per sector
+            std::vector<Alpha> betas; // vector of forcing intercepts per sector
+        };
 
     std::unordered_map<std::string, std::size_t> parameters_regions_map;
     const auto& all_sectors = base_forcing.get_sectors();
@@ -92,10 +93,13 @@ void ParametersPerRegionHeatLaborProductivity::join(Output& output, const Templa
     for (const auto& parameters_current_region : parameters.as_map()) {
         parameters_regions_map[parameters_current_region.first] = parameters_regions_map.size();
         RegionParameters parameters_struct;
-        parameters_struct.daily_temperature_threshold = parameters_current_region.second["daily_temperature_threshold"].as<ForcingType>();
-        for (const auto& node : parameters_current_region.second["sectors"].as_map()) {
+        for (const auto &node: parameters_current_region.second["sector_slope"].as_map()) {
             parameters_struct.alphas.push_back(
-                {all_sectors.at(node.first), node.second.as<ForcingType>()});  // increase of forcing per degree of temperature above threshold
+                    {all_sectors.at(node.first), node.second.as<ForcingType>()});  // slope of forcing
+        }
+        for (const auto &node: parameters_current_region.second["sector_intercept"].as_map()) {
+            parameters_struct.betas.push_back(
+                    {all_sectors.at(node.first), node.second.as<ForcingType>()});  // slope of forcing
         }
         region_parameters.emplace_back(std::move(parameters_struct));
     }
@@ -122,23 +126,23 @@ void ParametersPerRegionHeatLaborProductivity::join(Output& output, const Templa
             common_grid_view(common_grid, GridView<int>{parameters_isoraster, parameters_isoraster_grid}, GridView<int>{isoraster, isoraster_grid},
                              GridView<ForcingType>{proxy_values, proxy_grid}, GridView<ForcingType>{forcing_values, forcing_grid}),
             [&](std::size_t lat_index, std::size_t lon_index, int parameters_i, int i, ForcingType proxy_value, ForcingType forcing_v) {
-                (void)lat_index;
-                (void)lon_index;
+                (void) lat_index;
+                (void) lon_index;
                 if (forcing_v > 1e10 || proxy_value <= 0 || i < 0 || std::isnan(forcing_v) || std::isnan(proxy_value)) {
                     return true;
                 }
-
+                //TODO: adjust for alpha beta forcing
                 const auto region = regions[i];
                 const auto parameters_region = parameters_regions[parameters_i];
-                const RegionParameters& parameters_current_region = region_parameters[parameters_region];
-                if (forcing_v > parameters_current_region.daily_temperature_threshold) {
-                    if (region < 0) {
-                        return true;
-                    }
-                    for (const auto& alpha : parameters_current_region.alphas) {
-                        forcing(alpha.sector_index, region) +=
-                            std::min(ForcingType(1.0), alpha.value * (forcing_v - parameters_current_region.daily_temperature_threshold)) * proxy_value;
-                    }
+                const RegionParameters &parameters_current_region = region_parameters[parameters_region];
+                if (region < 0) {
+                    return true;
+                }
+                for (const auto &alpha: parameters_current_region.alphas) { //iterate for sectors using alpha
+                    forcing(alpha.sector_index, region) +=
+                            std::min(ForcingType(1.0), alpha.value * forcing_v -
+                                                       parameters_current_region.betas[alpha.sector_index].value) *
+                            proxy_value;
                 }
                 return true;
             });

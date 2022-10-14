@@ -28,7 +28,7 @@
 #include "helpers.h"
 #include "impacts/Flooding.h"
 #include "impacts/HeatLaborProductivity.h"
-#include "impacts/ParametersPerRegionHeatLaborProductivity.h"
+#include "impacts/AlphaBetaForcingPerSubregion.h"
 #include "impacts/TropicalCyclones.h"
 #include "progressbar.h"
 #include "settingsnode.h"
@@ -71,7 +71,8 @@ static void run(const settings::SettingsNode& settings) {
                 impact_name = "Heat Labor Productivity";
                 break;
             case settings::hstring::hash("parameters_per_region_heat_labor_productivity"):
-                impact = std::make_unique<impactgen::ParametersPerRegionHeatLaborProductivity>(impact_node, output.prepare_forcing());
+                impact = std::make_unique<impactgen::AlphaBetaForcingPerSubregion>(impact_node,
+                                                                                   output.prepare_forcing());
                 impact_name = "Parameters per region Heat Labor Productivity";
                 break;
             default:
