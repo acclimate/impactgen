@@ -40,13 +40,13 @@ namespace impactgen {
     AlphaBetaForcingPerSubregion::AlphaBetaForcingPerSubregion(const settings::SettingsNode &impact_node,
                                                                AgentForcing base_forcing_p)
             : AgentImpact(std::move(base_forcing_p)), ProxiedImpact(impact_node["proxy"]), Impact(impact_node) {
-    forcing_filename = impact_node["day_temperature"]["file"].as<std::string>();
-    forcing_varname = impact_node["day_temperature"]["variable"].as<std::string>();
-    unit = impact_node["day_temperature"]["unit"].as<std::string>();  // load unit to convert to degree C; K= degree Kelvin, C= degree Celsius
-    parameters = impact_node["parameters"];                           // load forcing parameters indexed by region
-    parameters_raster_node = impact_node["parameters_raster"];
-    read_isoraster(impact_node["isoraster"], base_forcing.get_regions());
-}
+        forcing_filename = impact_node["forcing"]["file"].as<std::string>();
+        forcing_varname = impact_node["forcing"]["variable"].as<std::string>();
+        parameters = impact_node["parameters"];                           // load forcing parameters indexed by subnational regions
+        parameters_raster_node = impact_node["parameters_raster"]; //raster of subnational regions
+        read_isoraster(impact_node["isoraster"],
+                       base_forcing.get_regions()); //raster of acclimate regions to apply forcing to
+    }
 
     void AlphaBetaForcingPerSubregion::join(Output &output, const TemplateFunction &template_func) {
         auto filename = fill_template(forcing_filename, template_func);
@@ -70,6 +70,7 @@ namespace impactgen {
         throw std::runtime_error(filename + ": Forcing and ISO raster not compatible in raster resolution");
     }
 
+
     read_proxy(fill_template(proxy_filename, template_func), output.get_regions());
 
     auto forcing_series = ForcingSeries<AgentForcing>(base_forcing, output.ref());
@@ -78,13 +79,13 @@ namespace impactgen {
     progressbar::ProgressBar time_bar(time_variable.times.size(), filename, true);
     std::vector<ForcingType> region_forcing(regions.size());
 
-    struct Alpha {
-        std::size_t sector_index;
-        ForcingType value;
-    };
+        struct SectorParameter {
+            std::size_t sector_index;
+            ForcingType value;
+        };
         struct RegionParameters {
-            std::vector<Alpha> alphas;  // vector of forcing slopes per sector
-            std::vector<Alpha> betas; // vector of forcing intercepts per sector
+            std::vector<SectorParameter> alphas;  // vector of forcing slopes per sector
+            std::vector<SectorParameter> betas; // vector of forcing intercepts per sector
         };
 
     std::unordered_map<std::string, std::size_t> parameters_regions_map;
@@ -103,22 +104,30 @@ namespace impactgen {
         }
         region_parameters.emplace_back(std::move(parameters_struct));
     }
-    nvector::Vector<int, 2> parameters_isoraster;
-    GeoGrid<float> parameters_isoraster_grid;
-    std::vector<int> parameters_regions;
-    read_isoraster(parameters_raster_node, parameters_regions_map, parameters_isoraster, parameters_isoraster_grid, parameters_regions);
+        nvector::Vector<int, 2> parameters_isoraster;
+        GeoGrid<float> parameters_isoraster_grid;
+        std::vector<int> parameters_regions;
+        read_isoraster(parameters_raster_node, parameters_regions_map, parameters_isoraster, parameters_isoraster_grid,
+                       parameters_regions);
 
-    for (std::size_t t = 0; t < time_variable.times.size(); ++t) {
-        if (chunk_pos == chunk_size) {
-            forcing_variable.getVar(
-                {t, 0, 0},
-                {t + chunk_size > time_variable.times.size() ? time_variable.times.size() - t : chunk_size, forcing_grid.lat_count, forcing_grid.lon_count},
-                &chunk_buffer[0]);
-            chunk_pos = 0;
+        if (!parameters_isoraster_grid.is_compatible(forcing_grid)) {
+            throw std::runtime_error(
+                    filename + ": Forcing and parameter ISO raster not compatible in raster resolution");
         }
-        nvector::View<ForcingType, 2> forcing_values(
-            std::begin(chunk_buffer) + chunk_pos * forcing_grid.size(),
-            {nvector::Slice{0, forcing_grid.lat_count, static_cast<int>(forcing_grid.lon_count)}, nvector::Slice{0, forcing_grid.lon_count, 1}});
+
+        for (std::size_t t = 0; t < time_variable.times.size(); ++t) {
+            if (chunk_pos == chunk_size) {
+                forcing_variable.getVar(
+                        {t, 0, 0},
+                        {t + chunk_size > time_variable.times.size() ? time_variable.times.size() - t : chunk_size,
+                         forcing_grid.lat_count, forcing_grid.lon_count},
+                        &chunk_buffer[0]);
+                chunk_pos = 0;
+            }
+            nvector::View<ForcingType, 2> forcing_values(
+                    std::begin(chunk_buffer) + chunk_pos * forcing_grid.size(),
+                    {nvector::Slice{0, forcing_grid.lat_count, static_cast<int>(forcing_grid.lon_count)},
+                     nvector::Slice{0, forcing_grid.lon_count, 1}});
         ++chunk_pos;
         GeoGrid<float> common_grid;
         AgentForcing& forcing = forcing_series.insert_forcing(time_variable.times[t]);
@@ -138,9 +147,9 @@ namespace impactgen {
                 if (region < 0) {
                     return true;
                 }
-                for (const auto &alpha: parameters_current_region.alphas) { //iterate for sectors using alpha
+                for (const auto &alpha: parameters_current_region.alphas) { //iterate over sectors using alpha
                     forcing(alpha.sector_index, region) +=
-                            std::min(ForcingType(1.0), alpha.value * forcing_v -
+                            std::min(ForcingType(1.0), alpha.value * forcing_v +
                                                        parameters_current_region.betas[alpha.sector_index].value) *
                             proxy_value;
                 }

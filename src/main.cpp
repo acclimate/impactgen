@@ -70,10 +70,10 @@ static void run(const settings::SettingsNode& settings) {
                 impact = std::make_unique<impactgen::HeatLaborProductivity>(impact_node, output.prepare_forcing());
                 impact_name = "Heat Labor Productivity";
                 break;
-            case settings::hstring::hash("parameters_per_region_heat_labor_productivity"):
+            case settings::hstring::hash("alpha_beta_subregions"):
                 impact = std::make_unique<impactgen::AlphaBetaForcingPerSubregion>(impact_node,
                                                                                    output.prepare_forcing());
-                impact_name = "Parameters per region Heat Labor Productivity";
+                impact_name = "Alpha Beta subregional forcing";
                 break;
             default:
                 throw std::runtime_error("Unsupported impact type '" + std::string(type) + "'");
