@@ -88,18 +88,23 @@ namespace impactgen {
             std::vector<SectorParameter> betas; // vector of forcing intercepts per sector
         };
 
-    std::unordered_map<std::string, std::size_t> parameters_regions_map;
-    const auto& all_sectors = base_forcing.get_sectors();
-    std::vector<RegionParameters> region_parameters;
-    for (const auto& parameters_current_region : parameters.as_map()) {
-        parameters_regions_map[parameters_current_region.first] = parameters_regions_map.size();
-        RegionParameters parameters_struct;
-        for (const auto &node: parameters_current_region.second["sector_slope"].as_map()) {
-            parameters_struct.alphas.push_back(
-                    {all_sectors.at(node.first), node.second.as<ForcingType>()});  // slope of forcing
+        std::unordered_map<std::string, std::size_t> parameters_regions_map;
+        const auto &all_sectors = base_forcing.get_sectors();
+        // generate sector vecotr with ALL sectors included. checking in forcing generation if forcing == 0 for sector
+        for (const auto sector: all_sectors) {
+            std::cout << sector.first << ": " << sector.second << std::endl;
+            sectors.push_back(sector.second);
         }
-        for (const auto &node: parameters_current_region.second["sector_intercept"].as_map()) {
-            parameters_struct.betas.push_back(
+        std::vector<RegionParameters> region_parameters;
+        for (const auto &parameters_current_region: parameters.as_map()) {
+            parameters_regions_map[parameters_current_region.first] = parameters_regions_map.size();
+            RegionParameters parameters_struct;
+            for (const auto &node: parameters_current_region.second["sector_slope"].as_map()) {
+                parameters_struct.alphas.push_back(
+                        {all_sectors.at(node.first), node.second.as<ForcingType>()});  // slope of forcing
+            }
+            for (const auto &node: parameters_current_region.second["sector_intercept"].as_map()) {
+                parameters_struct.betas.push_back(
                     {all_sectors.at(node.first), node.second.as<ForcingType>()});  // slope of forcing
         }
         region_parameters.emplace_back(std::move(parameters_struct));
@@ -156,19 +161,24 @@ namespace impactgen {
                 return true;
             });
 
-        for (std::size_t i = 0; i < regions.size(); ++i) {
-            const auto region = regions[i];
-            if (region < 0) {
-                continue;
+
+            for (std::size_t i = 0; i < regions.size(); ++i) {
+                const auto region = regions[i];
+
+                const auto total_proxy_value = total_proxy[i];
+
+                if (region < 0) {
+                    continue;
+                }
+
+                for (std::size_t s = 0; s < sectors.size(); ++s) {
+                    if (std::isnan(forcing(sectors[s],
+                                           region))) { // check if forcing calculated for this sector in this region
+                        continue;
+                    }
+                    forcing(sectors[s], region) = (total_proxy_value - forcing(sectors[s], region)) / total_proxy_value;
+                }
             }
-            const auto total_proxy_value = total_proxy[i];
-            if (total_proxy_value <= 0) {
-                continue;
-            }
-            for (const auto sector : sectors) {
-                forcing(sector, region) = (total_proxy_value - forcing(sector, region)) / total_proxy_value;
-            }
-        }
         ++time_bar;
     }
     output.include_forcing(forcing_series);
