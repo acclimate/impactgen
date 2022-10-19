@@ -19,8 +19,8 @@
   <http://www.gnu.org/licenses/>.
 */
 
-#ifndef IMPACTGEN_ALPHABETAFORCINGPERSUBREGION_H
-#define IMPACTGEN_ALPHABETAFORCINGPERSUBREGION_H
+#ifndef IMPACTGEN_EXTREMETEMPERATURESPERSUBREGION_H
+#define IMPACTGEN_EXTREMETEMPERATURESPERSUBREGION_H
 
 #include <string>
 
@@ -32,21 +32,21 @@
 
 namespace impactgen {
 
-class Output;
+    class Output;
 
-class AlphaBetaForcingPerSubregion : public AgentImpact, public ProxiedImpact, public Impact {
-protected:
-    settings::SettingsNode parameters;
-    settings::SettingsNode parameters_raster_node;
-    std::string forcing_filename;
-    std::string forcing_varname;
-    std::string unit;
+    class ExtremeTemperaturesPerSubregion : public AgentImpact, public ProxiedImpact, public Impact {
+    protected:
+        settings::SettingsNode parameters;
+        settings::SettingsNode parameters_raster_node;
+        std::string forcing_filename;
+        std::string forcing_varname;
+        std::string unit;
 
-public:
-    AlphaBetaForcingPerSubregion(const settings::SettingsNode &impact_node, AgentForcing base_forcing_p);
+    public:
+        ExtremeTemperaturesPerSubregion(const settings::SettingsNode &impact_node, AgentForcing base_forcing_p);
 
-    void join(Output& output, const TemplateFunction& template_func) override;
-};
+        void join(Output &output, const TemplateFunction &template_func) override;
+    };
 }  // namespace impactgen
 
 #endif

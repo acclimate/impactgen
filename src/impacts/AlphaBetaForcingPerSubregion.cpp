@@ -84,8 +84,8 @@ namespace impactgen {
             ForcingType value;
         };
         struct RegionParameters {
-            std::vector<SectorParameter> alphas;  // vector of forcing slopes per sector
-            std::vector<SectorParameter> betas; // vector of forcing intercepts per sector
+            std::vector<SectorParameter> slope;  // vector of forcing slopes per sector
+            std::vector<SectorParameter> intercept; // vector of forcing intercepts per sector
         };
 
         std::unordered_map<std::string, std::size_t> parameters_regions_map;
@@ -100,13 +100,13 @@ namespace impactgen {
             parameters_regions_map[parameters_current_region.first] = parameters_regions_map.size();
             RegionParameters parameters_struct;
             for (const auto &node: parameters_current_region.second["sector_slope"].as_map()) {
-                parameters_struct.alphas.push_back(
-                        {all_sectors.at(node.first), node.second.as<ForcingType>()});  // slope of forcing
+                parameters_struct.slope.push_back(
+                        {all_sectors.at(node.first), node.second.as<ForcingType>()});
             }
             for (const auto &node: parameters_current_region.second["sector_intercept"].as_map()) {
-                parameters_struct.betas.push_back(
-                    {all_sectors.at(node.first), node.second.as<ForcingType>()});  // slope of forcing
-        }
+                parameters_struct.intercept.push_back(
+                        {all_sectors.at(node.first), node.second.as<ForcingType>()});
+            }
         region_parameters.emplace_back(std::move(parameters_struct));
     }
         nvector::Vector<int, 2> parameters_isoraster;
@@ -145,17 +145,16 @@ namespace impactgen {
                 if (forcing_v > 1e10 || proxy_value <= 0 || i < 0 || std::isnan(forcing_v) || std::isnan(proxy_value)) {
                     return true;
                 }
-                //TODO: adjust for alpha beta forcing
                 const auto region = regions[i];
                 const auto parameters_region = parameters_regions[parameters_i];
                 const RegionParameters &parameters_current_region = region_parameters[parameters_region];
                 if (region < 0) {
                     return true;
                 }
-                for (const auto &alpha: parameters_current_region.alphas) { //iterate over sectors using alpha
+                for (const auto &alpha: parameters_current_region.slope) { //iterate over sectors using alpha
                     forcing(alpha.sector_index, region) +=
                             std::min(ForcingType(1.0), alpha.value * forcing_v +
-                                                       parameters_current_region.betas[alpha.sector_index].value) *
+                                                       parameters_current_region.intercept[alpha.sector_index].value) *
                             proxy_value;
                 }
                 return true;

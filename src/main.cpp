@@ -26,6 +26,7 @@
 #include <unordered_map>
 #include "Output.h"
 #include "helpers.h"
+#include "impacts/ExtremeTemperaturesPerSubregion.h"
 #include "impacts/Flooding.h"
 #include "impacts/HeatLaborProductivity.h"
 #include "impacts/AlphaBetaForcingPerSubregion.h"
@@ -74,6 +75,11 @@ static void run(const settings::SettingsNode& settings) {
                 impact = std::make_unique<impactgen::AlphaBetaForcingPerSubregion>(impact_node,
                                                                                    output.prepare_forcing());
                 impact_name = "Alpha Beta subregional forcing";
+                break;
+            case settings::hstring::hash("extreme_temperatures_subregions"):
+                impact = std::make_unique<impactgen::ExtremeTemperaturesPerSubregion>(impact_node,
+                                                                                      output.prepare_forcing());
+                impact_name = "Extreme temperature subregional forcing";
                 break;
             default:
                 throw std::runtime_error("Unsupported impact type '" + std::string(type) + "'");
