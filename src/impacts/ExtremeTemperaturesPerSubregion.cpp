@@ -190,7 +190,7 @@ namespace impactgen {
                                                    parameters_current_region.heat_deviation_mean[i_sector].value, 2);
                             }
 
-                            forcing(quadratic_factor_cold.sector_index, region) +=
+                            forcing(quadratic_factor_cold.sector_index, region) -=
                                     std::min(ForcingType(1.0), cold_forcing + heat_forcing +
                                                                parameters_current_region.baseline[i_sector].value) *
                                     proxy_value;
