@@ -191,7 +191,7 @@ namespace impactgen {
                             }
 
                             forcing(quadratic_factor_cold.sector_index, region) -=
-                                    std::min(ForcingType(1.0), cold_forcing + heat_forcing +
+                                    std::max(ForcingType(1.0), cold_forcing + heat_forcing +
                                                                parameters_current_region.baseline[i_sector].value) *
                                     proxy_value;
                         }
