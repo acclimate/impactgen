@@ -152,10 +152,12 @@ namespace impactgen {
                     return true;
                 }
                 for (const auto &alpha: parameters_current_region.slope) { //iterate over sectors using alpha
+
+                    ForcingType change_of_productivity = std::min(ForcingType(1.0),
+                                                                  std::max(ForcingType(-1.0), alpha.value * forcing_v +
+                                                                                              parameters_current_region.intercept[alpha.sector_index].value));
                     forcing(alpha.sector_index, region) -=
-                            std::max(ForcingType(1.0), alpha.value * forcing_v +
-                                                       parameters_current_region.intercept[alpha.sector_index].value) *
-                            proxy_value;
+                            change_of_productivity * proxy_value;
                 }
                 return true;
             });

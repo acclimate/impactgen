@@ -175,8 +175,8 @@ namespace impactgen {
                         for (const auto &quadratic_factor_cold: parameters_current_region.quadratic_factor_cold) { //iterate over sectors using parameters
 
                             auto i_sector = quadratic_factor_cold.sector_index;
-                            ForcingType cold_forcing = 0.0;
-                            ForcingType heat_forcing = 0.0;
+                            ForcingType cold_forcing = ForcingType(0.0);
+                            ForcingType heat_forcing = ForcingType(0.0);
 
                             if (forcing_v < parameters_current_region.cold_deviation_mean[i_sector].value) {
                                 cold_forcing = parameters_current_region.quadratic_factor_cold[i_sector].value *
@@ -190,10 +190,14 @@ namespace impactgen {
                                                    parameters_current_region.heat_deviation_mean[i_sector].value, 2);
                             }
 
+
+                            ForcingType change_of_productivity = std::min(ForcingType(1.0), std::max(ForcingType(-1.0),
+                                                                                                     cold_forcing +
+                                                                                                     heat_forcing +
+                                                                                                     parameters_current_region.baseline[i_sector].value));
+
                             forcing(quadratic_factor_cold.sector_index, region) -=
-                                    std::max(ForcingType(1.0), cold_forcing + heat_forcing +
-                                                               parameters_current_region.baseline[i_sector].value) *
-                                    proxy_value;
+                                    change_of_productivity * proxy_value;
                         }
                         return true;
                     });
