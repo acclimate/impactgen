@@ -59,25 +59,26 @@ namespace impactgen {
         const auto forcing_variable = forcing_file.getVar(forcing_varname);
         if (forcing_variable.isNull()) {
             throw std::runtime_error(filename + ": Variable '" + forcing_varname + "' not found");
-    }
-    if (!check_dimensions(forcing_variable, {"time", "lat", "lon"}) && !check_dimensions(forcing_variable, {"time", "latitude", "longitude"})) {
-        throw std::runtime_error(filename + " - " + forcing_varname + ": Unexpected dimensions");
-    }
-    TimeVariable time_variable(forcing_file, filename, time_shift);
-    GeoGrid<float> forcing_grid;
-    forcing_grid.read_from_netcdf(forcing_file, filename);
-    if (!isoraster_grid.is_compatible(forcing_grid)) {
-        throw std::runtime_error(filename + ": Forcing and ISO raster not compatible in raster resolution");
-    }
+        }
+        if (!check_dimensions(forcing_variable, {"time", "lat", "lon"}) &&
+            !check_dimensions(forcing_variable, {"time", "latitude", "longitude"})) {
+            throw std::runtime_error(filename + " - " + forcing_varname + ": Unexpected dimensions");
+        }
+        TimeVariable time_variable(forcing_file, filename, time_shift);
+        GeoGrid<float> forcing_grid;
+        forcing_grid.read_from_netcdf(forcing_file, filename);
+        if (!isoraster_grid.is_compatible(forcing_grid)) {
+            throw std::runtime_error(filename + ": Forcing and ISO raster not compatible in raster resolution");
+        }
 
 
-    read_proxy(fill_template(proxy_filename, template_func), output.get_regions());
+        read_proxy(fill_template(proxy_filename, template_func), output.get_regions());
 
-    auto forcing_series = ForcingSeries<AgentForcing>(base_forcing, output.ref());
-    std::size_t chunk_pos = chunk_size;
-    std::vector<ForcingType> chunk_buffer(chunk_size * forcing_grid.size());
-    progressbar::ProgressBar time_bar(time_variable.times.size(), filename, true);
-    std::vector<ForcingType> region_forcing(regions.size());
+        auto forcing_series = ForcingSeries<AgentForcing>(base_forcing, output.ref());
+        std::size_t chunk_pos = chunk_size;
+        std::vector<ForcingType> chunk_buffer(chunk_size *forcing_grid.size());
+        progressbar::ProgressBar time_bar(time_variable.times.size(), filename, true);
+        std::vector<ForcingType> region_forcing(regions.size());
 
         struct SectorParameter {
             std::size_t sector_index;
@@ -107,8 +108,8 @@ namespace impactgen {
                 parameters_struct.intercept.push_back(
                         {all_sectors.at(node.first), node.second.as<ForcingType>()});
             }
-        region_parameters.emplace_back(std::move(parameters_struct));
-    }
+            region_parameters.emplace_back(std::move(parameters_struct));
+        }
         nvector::Vector<int, 2> parameters_isoraster;
         GeoGrid<float> parameters_isoraster_grid;
         std::vector<int> parameters_regions;
@@ -133,40 +134,47 @@ namespace impactgen {
                     std::begin(chunk_buffer) + chunk_pos * forcing_grid.size(),
                     {nvector::Slice{0, forcing_grid.lat_count, static_cast<int>(forcing_grid.lon_count)},
                      nvector::Slice{0, forcing_grid.lon_count, 1}});
-        ++chunk_pos;
-        GeoGrid<float> common_grid;
-        AgentForcing& forcing = forcing_series.insert_forcing(time_variable.times[t]);
-        nvector::foreach_view(
-            common_grid_view(common_grid, GridView<int>{parameters_isoraster, parameters_isoraster_grid}, GridView<int>{isoraster, isoraster_grid},
-                             GridView<ForcingType>{proxy_values, proxy_grid}, GridView<ForcingType>{forcing_values, forcing_grid}),
-            [&](std::size_t lat_index, std::size_t lon_index, int parameters_i, int i, ForcingType proxy_value, ForcingType forcing_v) {
-                (void) lat_index;
-                (void) lon_index;
-                if (forcing_v > 1e10 || proxy_value <= 0 || i < 0 || std::isnan(forcing_v) || std::isnan(proxy_value)) {
-                    return true;
-                }
-                const auto region = regions[i];
-                const auto parameters_region = parameters_regions[parameters_i];
-                const RegionParameters &parameters_current_region = region_parameters[parameters_region];
-                if (region < 0) {
-                    return true;
-                }
-                for (const auto &alpha: parameters_current_region.slope) { //iterate over sectors using alpha
+            ++chunk_pos;
+            GeoGrid<float> common_grid;
+            AgentForcing &forcing = forcing_series.insert_forcing(time_variable.times[t]);
+            nvector::foreach_view(
+                    common_grid_view(common_grid, GridView<int>{parameters_isoraster, parameters_isoraster_grid},
+                                     GridView<int>{isoraster, isoraster_grid},
+                                     GridView<ForcingType>{proxy_values, proxy_grid},
+                                     GridView<ForcingType>{forcing_values, forcing_grid}),
+                    [&](std::size_t lat_index, std::size_t lon_index, int parameters_i, int i, ForcingType proxy_value,
+                        ForcingType forcing_v) {
+                        (void) lat_index;
+                        (void) lon_index;
+                        if (forcing_v > 1e10 || proxy_value <= 0 || i < 0 || std::isnan(forcing_v) ||
+                            std::isnan(proxy_value)) {
+                            return true;
+                        }
+                        const auto region = regions[i];
+                        const auto parameters_region = parameters_regions[parameters_i];
+                        const RegionParameters &parameters_current_region = region_parameters[parameters_region];
+                        if (region < 0) {
+                            return true;
+                        }
+                        for (const auto &slope: parameters_current_region.slope) { //iterate over sectors using slope
 
-                    ForcingType change_of_productivity = std::min(ForcingType(1.0),
-                                                                  std::max(ForcingType(-1.0), alpha.value * forcing_v +
-                                                                                              parameters_current_region.intercept[alpha.sector_index].value));
-                    forcing(alpha.sector_index, region) -=
-                            change_of_productivity * proxy_value;
-                }
-                return true;
-            });
+                            ForcingType change_of_productivity = std::min(ForcingType(1.0),
+                                                                          std::max(ForcingType(-1.0),
+                                                                                   slope.value * forcing_v +
+                                                                                   parameters_current_region.intercept[slope.sector_index].value));
+                            forcing(slope.sector_index, region) -=
+                                    change_of_productivity * proxy_value;
+                        }
+                        return true;
+                    });
 
 
             for (std::size_t i = 0; i < regions.size(); ++i) {
                 const auto region = regions[i];
-
                 const auto total_proxy_value = total_proxy[i];
+                if (total_proxy_value <= 0) {
+                    continue;
+                }
 
                 if (region < 0) {
                     continue;
@@ -180,10 +188,10 @@ namespace impactgen {
                     forcing(sectors[s], region) = (total_proxy_value - forcing(sectors[s], region)) / total_proxy_value;
                 }
             }
-        ++time_bar;
+            ++time_bar;
+        }
+        output.include_forcing(forcing_series);
+        time_bar.close(true);
     }
-    output.include_forcing(forcing_series);
-    time_bar.close(true);
-}
 
 }  // namespace impactgen

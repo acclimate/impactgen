@@ -208,6 +208,10 @@ namespace impactgen {
 
                 const auto total_proxy_value = total_proxy[i];
 
+                if (total_proxy_value <= 0) {
+                    continue;
+                }
+
                 if (region < 0) {
                     continue;
                 }
