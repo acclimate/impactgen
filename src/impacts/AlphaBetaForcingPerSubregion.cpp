@@ -172,6 +172,7 @@ namespace impactgen {
             for (std::size_t i = 0; i < regions.size(); ++i) {
                 const auto region = regions[i];
                 const auto total_proxy_value = total_proxy[i];
+
                 if (total_proxy_value <= 0) {
                     continue;
                 }
@@ -186,6 +187,9 @@ namespace impactgen {
                         continue;
                     }
                     forcing(sectors[s], region) = (total_proxy_value - forcing(sectors[s], region)) / total_proxy_value;
+                    forcing(sectors[s], region) = std::min(ForcingType(1.0), std::max(ForcingType(-1.0),
+                                                                                      forcing(sectors[s],
+                                                                                              region))); //upper and lower bound for forcing
                 }
             }
             ++time_bar;
