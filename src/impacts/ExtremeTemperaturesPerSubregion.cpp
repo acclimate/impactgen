@@ -222,7 +222,7 @@ namespace impactgen {
                         continue;
                     }
                     forcing(sectors[s], region) = (total_proxy_value - forcing(sectors[s], region)) / total_proxy_value;
-                    forcing(sectors[s], region) = std::min(ForcingType(1.0), std::max(ForcingType(-1.0),
+                    forcing(sectors[s], region) = std::min(ForcingType(2.0), std::max(ForcingType(0.0),
                                                                                       forcing(sectors[s],
                                                                                               region))); //upper and lower bound for forcing
                 }
