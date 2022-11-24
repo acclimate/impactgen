@@ -174,6 +174,7 @@ namespace impactgen {
                             parameters_current_region = region_parameters[parameters_region];
                         }
                         catch (...) {
+                            std::cout << region << ": " << parameters_region << std::endl;
                             return true; // assuming no forcing for regions without reliable estimate
                         }
                         if (region < 0) {
