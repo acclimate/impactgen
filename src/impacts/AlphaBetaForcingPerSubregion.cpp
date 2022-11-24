@@ -151,9 +151,10 @@ namespace impactgen {
                             return true;
                         }
                         const auto region = regions[i];
-                        const auto parameters_region = parameters_regions[parameters_i];
+                        int parameters_region;
                         RegionParameters parameters_current_region;
                         try {
+                            parameters_region = parameters_regions[parameters_i];
                             parameters_current_region = region_parameters[parameters_region];
                         }
                         catch (...) {
