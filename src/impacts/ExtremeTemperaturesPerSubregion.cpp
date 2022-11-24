@@ -168,7 +168,13 @@ namespace impactgen {
                         }
                         const auto region = regions[i];
                         const auto parameters_region = parameters_regions[parameters_i];
-                        const RegionParameters &parameters_current_region = region_parameters[parameters_region];
+                        RegionParameters parameters_current_region;
+                        try {
+                            parameters_current_region = region_parameters[parameters_region];
+                        }
+                        catch (...) {
+                            return true; // assuming no forcing for regions without reliable estimate
+                        }
                         if (region < 0) {
                             return true;
                         }
