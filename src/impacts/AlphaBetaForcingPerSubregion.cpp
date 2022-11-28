@@ -155,6 +155,9 @@ namespace impactgen {
                         RegionParameters parameters_current_region;
                         try {
                             parameters_region = parameters_regions[parameters_i];
+                            if (parameters_region < 0) {
+                                return true;
+                            }
                             parameters_current_region = region_parameters[parameters_region];
                         }
                         catch (...) {
