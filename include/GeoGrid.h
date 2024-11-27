@@ -26,6 +26,7 @@
 #include <memory>
 #include <string>
 #include <vector>
+#include <limits>
 #include "netcdftools.h"
 #include "nvector.h"
 
@@ -58,6 +59,7 @@ struct GeoGrid {
         }
         if (res < 0 || res >= lat_count) {
             return std::numeric_limits<std::size_t>::quiet_NaN();
+            //~ return std::numeric_limits<std::size_t>::max();
         }
         return static_cast<std::size_t>(res);
     }
@@ -70,6 +72,7 @@ struct GeoGrid {
         }
         if (res < 0 || res >= lon_count) {
             return std::numeric_limits<std::size_t>::quiet_NaN();
+            //~ return std::numeric_limits<std::size_t>::max();
         }
         return static_cast<std::size_t>(res);
     }
