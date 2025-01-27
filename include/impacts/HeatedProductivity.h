@@ -41,7 +41,6 @@ class HeatedProductivity : public AgentImpact, public ProxiedImpact, public Impa
     GeoGrid<float> last_grid;
     std::string forcing_filename;
     std::string forcing_varname;
-    //~ std::vector<SectorCategory> sector_categories;  // Changed from unordered_map to vector of SectorCategory
     std::vector<std::vector<int>> categories;
 
   public:

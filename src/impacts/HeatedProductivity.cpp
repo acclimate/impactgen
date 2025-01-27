@@ -49,67 +49,10 @@ HeatedProductivity::HeatedProductivity(const settings::SettingsNode& impact_node
         categories.push_back(sectors);
     }
     
-   //~ // Define sector categories that need to be parsed
-    //~ std::vector<std::pair<int, std::string>> sector_keys = {
-        //~ {1, "sectors_200W"},
-        //~ {2, "sectors_300W"},
-        //~ {3, "sectors_400W"},
-        //~ {4, "sectors_500W"}
-    //~ };
-
-    //~ // Loop through each category and parse sectors if available
-    //~ for (const auto& [category, key] : sector_keys) {
-        //~ if (impact_node.has(key)) {
-            //~ SectorCategory sector_category;
-            //~ std::cout << category << std::endl;
-            //~ std::cout << impact_node[key] << std::endl;
-            //~ sector_category.sectors = impact_node[key].as<std::vector<std::string>>();  // Set the sectors
-        //~ }
-    //~ }
-    
-
-    // Parse the sector categories from impact_node and store them in the map
-    //~ if (impact_node.has("sectors_200W")) {
-        //~ auto sectors_200W = impact_node["sectors_200W"].as<std::vector<std::string>>();
-        //~ sector_categories[1] = sectors_200W;
-    //~ }
-    //~ if (impact_node.has("sectors_300W")) {
-        //~ auto sectors_300W = impact_node["sectors_300W"].as<std::vector<std::string>>();
-        //~ sector_categories[2] = sectors_300W;
-    //~ }
-    //~ if (impact_node.has("sectors_400W")) {
-        //~ auto sectors_400W = impact_node["sectors_400W"].as<std::vector<std::string>>();
-        //~ sector_categories[3] = sectors_400W;
-    //~ }
-    //~ if (impact_node.has("sectors_500W")) {
-        //~ auto sectors_500W = impact_node["sectors_500W"].as<std::vector<std::string>>();
-        //~ sector_categories[4] = sectors_500W;
-    //~ }
-
-    // Debug output to verify sectors were loaded correctly (optional)
-    //~ for (const auto& category : sector_categories) {
-        //~ std::cout << "Category " << category.first << ": ";
-        //~ for (const auto& sector : category.second) {
-            //~ std::cout << sector << " ";
-        //~ }
-        //~ std::cout << std::endl;
-    //~ }
-    //~ std::exit(0);
     read_isoraster(impact_node["isoraster"], base_forcing.get_regions());
 }
 
 
-//~ HeatedProductivity::HeatedProductivity(const settings::SettingsNode& impact_node, AgentForcing base_forcing_p)
-    //~ : AgentImpact(std::move(base_forcing_p)), ProxiedImpact(impact_node["proxy"]), Impact(impact_node) {
-    //~ forcing_filename = impact_node["heated_productivity"]["file"].as<std::string>();
-    //~ forcing_varname = impact_node["heated_productivity"]["variable"].as<std::string>();
-    //~ const auto& all_sectors = base_forcing.get_sectors();
-    //~ for (const auto node : impact_node["sectors"].as_map()) {
-        //~ sectors.push_back(all_sectors.at(node.first));
-        //~ alphas.push_back(node.second.as<ForcingType>());
-    //~ }
-    //~ read_isoraster(impact_node["isoraster"], base_forcing.get_regions());
-//~ }
 
 void HeatedProductivity::join(Output& output, const TemplateFunction& template_func) {
     auto filename = fill_template(forcing_filename, template_func);
