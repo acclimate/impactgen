@@ -64,10 +64,10 @@ sectors:
 output:
   file: *name of the output file*
 
-
-(c) Sven Willner et. al @Potsdam-Institute for Climate Impact reserach
-
 parameters:
     Region1: *regions as defined in parameters_raster*
         *parameters needed for forcing function*
 ```
+
+(c) Sven Willner et. al @Potsdam-Institute for Climate Impact reserach
+
