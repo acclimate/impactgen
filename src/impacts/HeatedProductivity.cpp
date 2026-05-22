@@ -54,24 +54,115 @@ HeatedProductivity::HeatedProductivity(const settings::SettingsNode& impact_node
 
 
 
+//~ void HeatedProductivity::join(Output& output, const TemplateFunction& template_func) {
+    //~ auto filename = fill_template(forcing_filename, template_func);
+    //~ netCDF::NcFile forcing_file;
+    //~ try {
+        //~ forcing_file.open(filename, netCDF::NcFile::read);
+    //~ } catch (netCDF::exceptions::NcException& e) {
+        //~ throw std::runtime_error(filename + ": " + e.what());
+    //~ }
+    //~ const auto forcing_variable = forcing_file.getVar(forcing_varname);
+    //~ if (forcing_variable.isNull()) {
+        //~ throw std::runtime_error(filename + ": Variable '" + forcing_varname + "' not found");
+    //~ }
+    //~ if (!check_dimensions(forcing_variable, {"time","z", "lat", "lon"}) && !check_dimensions(forcing_variable, {"time","z", "latitude", "longitude"})) {
+        //~ throw std::runtime_error(filename + " - " + forcing_varname + ": Unexpected dimensionsA");
+    //~ }
+    //~ TimeVariable time_variable(forcing_file, filename, time_shift);
+    //~ GeoGrid<float> forcing_grid;
+    //~ forcing_grid.read_from_netcdf(forcing_file, filename);
+    //~ if (!isoraster_grid.is_compatible(forcing_grid)) {
+        //~ throw std::runtime_error(filename + ": Forcing and ISO raster not compatible in raster resolution");
+    //~ }
+
+    //~ read_proxy(fill_template(proxy_filename, template_func), output.get_regions());
+
+    //~ auto forcing_series = ForcingSeries<AgentForcing>(base_forcing, output.ref());
+    //~ std::size_t chunk_pos = chunk_size;
+    //~ std::vector<ForcingType> chunk_buffer(chunk_size * forcing_grid.size());
+    //~ progressbar::ProgressBar time_bar(time_variable.times.size(), filename, true);
+    //~ std::vector<ForcingType> region_forcing(regions.size());
+    //~ for (std::size_t t = 0; t < time_variable.times.size(); ++t) {
+        //~ GeoGrid<float> common_grid;
+        //~ AgentForcing& forcing = forcing_series.insert_forcing(time_variable.times[t]);
+        //~ for(std::size_t category_number = 0; category_number < categories.size(); ++category_number) {
+            //~ if (chunk_pos == chunk_size) {
+                //~ forcing_variable.getVar({t,category_number, 0, 0}, {std::min(chunk_size, time_variable.times.size() - t), 1, forcing_grid.lat_count, forcing_grid.lon_count},
+                                        //~ &chunk_buffer[0]);
+                //~ chunk_pos = 0;
+                //~ time_bar.reset_eta();
+            //~ }
+            //~ nvector::View<ForcingType, 2> forcing_values(std::begin(chunk_buffer) + chunk_pos * forcing_grid.size(), forcing_grid.lat_count,
+                                                         //~ forcing_grid.lon_count);
+            //~ ++chunk_pos;
+            //~ const auto& category_sectors = categories[category_number];
+            //~ nvector::foreach_view(common_grid_view(common_grid, GridView<int>{isoraster, isoraster_grid}, GridView<ForcingType>{proxy_values, proxy_grid},
+                                                   //~ GridView<ForcingType>{forcing_values, forcing_grid}),
+                                  //~ [&](std::size_t lat_index, std::size_t lon_index, int i, ForcingType proxy_value, ForcingType forcing_v) {
+                                      //~ (void)lat_index;
+                                      //~ (void)lon_index;
+                                      //~ if (forcing_v / 100.0 > 1e10 || proxy_value <= 0 || i < 0 || std::isnan(forcing_v) || std::isnan(proxy_value)) {
+                                          //~ return true;
+                                      //~ }
+
+                                      //~ const auto region = regions[i];
+                                      //~ if (region < 0) {
+                                          //~ std::cout << "In Second" << std::endl;
+                                          //~ return true;
+                                      //~ }
+                                      //~ for (const auto sector : category_sectors) {
+                                          //~ forcing(sector, region) += std::min(ForcingType(1.0), ForcingType((1.-forcing_v / 100.0)) ) * proxy_value;
+                                      //~ }
+                                      //~ return true;
+                                  //~ });
+            
+            //~ for (std::size_t i = 0; i < regions.size(); ++i) {
+                //~ const auto region = regions[i];
+                //~ if (region < 0) {
+                    //~ continue;
+                //~ }
+                //~ const auto total_proxy_value = total_proxy[i];
+                //~ if (total_proxy_value <= 0) {
+                    //~ continue;
+                //~ }
+                //~ for (const auto sector : category_sectors) {
+                    //~ forcing(sector, region) = (total_proxy_value - forcing(sector, region)) / total_proxy_value;
+                //~ }
+    
+                
+            //~ }
+            //~ ++time_bar;
+        //~ }
+    //~ }
+    //~ output.include_forcing(forcing_series);
+    //~ time_bar.close(true);
+//~ }
 void HeatedProductivity::join(Output& output, const TemplateFunction& template_func) {
     auto filename = fill_template(forcing_filename, template_func);
     netCDF::NcFile forcing_file;
+
     try {
         forcing_file.open(filename, netCDF::NcFile::read);
     } catch (netCDF::exceptions::NcException& e) {
         throw std::runtime_error(filename + ": " + e.what());
     }
+
     const auto forcing_variable = forcing_file.getVar(forcing_varname);
     if (forcing_variable.isNull()) {
         throw std::runtime_error(filename + ": Variable '" + forcing_varname + "' not found");
     }
-    if (!check_dimensions(forcing_variable, {"time","z", "lat", "lon"}) && !check_dimensions(forcing_variable, {"time","z", "latitude", "longitude"})) {
+
+    if (!check_dimensions(forcing_variable, {"time", "z", "lat", "lon"}) &&
+        !check_dimensions(forcing_variable, {"time", "z", "latitude", "longitude"})) {
         throw std::runtime_error(filename + " - " + forcing_varname + ": Unexpected dimensionsA");
     }
+
     TimeVariable time_variable(forcing_file, filename, time_shift);
+
     GeoGrid<float> forcing_grid;
     forcing_grid.read_from_netcdf(forcing_file, filename);
+
     if (!isoraster_grid.is_compatible(forcing_grid)) {
         throw std::runtime_error(filename + ": Forcing and ISO raster not compatible in raster resolution");
     }
@@ -79,73 +170,123 @@ void HeatedProductivity::join(Output& output, const TemplateFunction& template_f
     read_proxy(fill_template(proxy_filename, template_func), output.get_regions());
 
     auto forcing_series = ForcingSeries<AgentForcing>(base_forcing, output.ref());
-    std::size_t chunk_pos = chunk_size;
-    std::vector<ForcingType> chunk_buffer(chunk_size * forcing_grid.size());
-    progressbar::ProgressBar time_bar(time_variable.times.size(), filename, true);
-    std::vector<ForcingType> region_forcing(regions.size());
+
+    const std::size_t category_count = categories.size();
+    const std::size_t grid_size = forcing_grid.size();
+
+    std::vector<ForcingType> chunk_buffer(
+        chunk_size * category_count * grid_size
+    );
+
+    std::size_t chunk_start_t = 0;
+    std::size_t loaded_chunk_len = 0;
+
+    progressbar::ProgressBar time_bar(
+        time_variable.times.size() * category_count,
+        filename,
+        true
+    );
+
     for (std::size_t t = 0; t < time_variable.times.size(); ++t) {
+        if (t == chunk_start_t + loaded_chunk_len) {
+            chunk_start_t = t;
+            loaded_chunk_len = std::min(chunk_size, time_variable.times.size() - t);
+
+            forcing_variable.getVar(
+                {chunk_start_t, 0, 0, 0},
+                {loaded_chunk_len,
+                 category_count,
+                 forcing_grid.lat_count,
+                 forcing_grid.lon_count},
+                &chunk_buffer[0]
+            );
+
+            time_bar.reset_eta();
+        }
+
+        const std::size_t t_in_chunk = t - chunk_start_t;
+
         GeoGrid<float> common_grid;
         AgentForcing& forcing = forcing_series.insert_forcing(time_variable.times[t]);
-        for(std::size_t category_number = 0; category_number < categories.size(); ++category_number) {
-            if (chunk_pos == chunk_size) {
-                forcing_variable.getVar({t,category_number, 0, 0}, {std::min(chunk_size, time_variable.times.size() - t), 1, forcing_grid.lat_count, forcing_grid.lon_count},
-                                        &chunk_buffer[0]);
-                chunk_pos = 0;
-                time_bar.reset_eta();
-            }
-            nvector::View<ForcingType, 2> forcing_values(std::begin(chunk_buffer) + chunk_pos * forcing_grid.size(), forcing_grid.lat_count,
-                                                         forcing_grid.lon_count);
-            //~ std::cout << forcing_values << std::endl;
-            //~ std::exit(0);
-            ++chunk_pos;
-            const auto& category_sectors = categories[category_number];
-            nvector::foreach_view(common_grid_view(common_grid, GridView<int>{isoraster, isoraster_grid}, GridView<ForcingType>{proxy_values, proxy_grid},
-                                                   GridView<ForcingType>{forcing_values, forcing_grid}),
-                                  [&](std::size_t lat_index, std::size_t lon_index, int i, ForcingType proxy_value, ForcingType forcing_v) {
-                                      (void)lat_index;
-                                      (void)lon_index;
-                                      if (forcing_v / 100.0 > 1e10 || proxy_value <= 0 || i < 0 || std::isnan(forcing_v) || std::isnan(proxy_value)) {
-                                          //~ std::cout << forcing_v << std::endl;
-                                          //~ std::cout << proxy_value << std::endl;
-                                          return true;
-                                      }
 
-                                      const auto region = regions[i];
-                                      if (region < 0) {
-                                          std::cout << "In Second" << std::endl;
-                                          return true;
-                                      }
-                                      for (const auto sector : category_sectors) {
-                                          
-                                          forcing(sector, region) += std::min(ForcingType(1.0), ForcingType((1.-forcing_v / 100.0)) ) * proxy_value;
-                                          
-                                          //~ if (forcing_v / 100.0 != 1.){
-                                              //~ std::cout << forcing_v / 100.0 << std::endl;
-                                              //~ std::cout << forcing(sectors[s], region) << std::endl;
-                                          //~ }
-                                          //~ std::cout << forcing(sectors[s], region) << std::endl;
-                                      }
-                                      return true;
-                                  });
-            
+        for (std::size_t category_number = 0; category_number < category_count; ++category_number) {
+            const auto& category_sectors = categories[category_number];
+
+            const std::size_t offset =
+                t_in_chunk * category_count * grid_size
+              + category_number * grid_size;
+
+            nvector::View<ForcingType, 2> forcing_values(
+                std::begin(chunk_buffer) + offset,
+                forcing_grid.lat_count,
+                forcing_grid.lon_count
+            );
+
+            nvector::foreach_view(
+                common_grid_view(
+                    common_grid,
+                    GridView<int>{isoraster, isoraster_grid},
+                    GridView<ForcingType>{proxy_values, proxy_grid},
+                    GridView<ForcingType>{forcing_values, forcing_grid}
+                ),
+                [&](std::size_t lat_index,
+                    std::size_t lon_index,
+                    int i,
+                    ForcingType proxy_value,
+                    ForcingType forcing_v) {
+                    (void)lat_index;
+                    (void)lon_index;
+
+                    if (forcing_v / 100.0 > 1e10 ||
+                        proxy_value <= 0 ||
+                        i < 0 ||
+                        std::isnan(forcing_v) ||
+                        std::isnan(proxy_value)) {
+                        return true;
+                    }
+
+                    const auto region = regions[i];
+
+                    if (region < 0) {
+                        std::cout << "In Second" << std::endl;
+                        return true;
+                    }
+
+                    for (const auto sector : category_sectors) {
+                        forcing(sector, region) +=
+                            std::min(
+                                ForcingType(1.0),
+                                ForcingType(1.0 - forcing_v / 100.0)
+                            ) * proxy_value;
+                    }
+
+                    return true;
+                }
+            );
+
             for (std::size_t i = 0; i < regions.size(); ++i) {
                 const auto region = regions[i];
+
                 if (region < 0) {
                     continue;
                 }
+
                 const auto total_proxy_value = total_proxy[i];
+
                 if (total_proxy_value <= 0) {
                     continue;
                 }
+
                 for (const auto sector : category_sectors) {
-                    forcing(sector, region) = (total_proxy_value - forcing(sector, region)) / total_proxy_value;
+                    forcing(sector, region) =
+                        (total_proxy_value - forcing(sector, region)) / total_proxy_value;
                 }
-    
-                
             }
+
             ++time_bar;
         }
     }
+
     output.include_forcing(forcing_series);
     time_bar.close(true);
 }
