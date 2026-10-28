@@ -31,27 +31,27 @@ static std::pair<std::time_t, int> parse_netcdf_format(const std::string& netcdf
     std::istringstream ss(netcdf_format);
     ss >> std::get_time(&res, "days since %Y-%m-%d");
     if (!ss.fail()) {
-        return std::make_pair(std::mktime(&res), 24 * 60 * 60);
+        return std::make_pair(::timegm(&res), 24 * 60 * 60);
     }
     ss.clear();
     ss >> std::get_time(&res, "hours since %Y-%m-%d %H:00");
     if (!ss.fail()) {
-        return std::make_pair(std::mktime(&res), 60 * 60);
+        return std::make_pair(::timegm(&res), 60 * 60);
     }
     ss.clear();
     ss >> std::get_time(&res, "minutes since %Y-%m-%d %H:%M");
     if (!ss.fail()) {
-        return std::make_pair(std::mktime(&res), 60);
+        return std::make_pair(::timegm(&res), 60);
     }
     ss.clear();
     ss >> std::get_time(&res, "minutes since %Y-%m-%d %H:%M:00");
     if (!ss.fail()) {
-        return std::make_pair(std::mktime(&res), 60);
+        return std::make_pair(::timegm(&res), 60);
     }
     ss.clear();
     ss >> std::get_time(&res, "seconds since %Y-%m-%d %H:%M:%S");
     if (!ss.fail()) {
-        return std::make_pair(std::mktime(&res), 1);
+        return std::make_pair(::timegm(&res), 1);
     }
     return std::make_pair(-1, 0);
 }
@@ -59,7 +59,7 @@ static std::pair<std::time_t, int> parse_netcdf_format(const std::string& netcdf
 std::time_t ReferenceTime::year(int year_p) {
     std::tm t = {};
     t.tm_year = year_p - 1900;
-    return std::mktime(&t);
+    return ::timegm(&t);
 }
 
 ReferenceTime::ReferenceTime(const std::string& netcdf_format) {
@@ -77,16 +77,16 @@ std::string ReferenceTime::to_netcdf_format() const {
     std::ostringstream res;
     switch (accuracy) {
         case 1:
-            res << "seconds since " << std::put_time(std::localtime(&time), "%Y-%m-%d %H:%M:%S");
+            res << "seconds since " << std::put_time(std::gmtime(&time), "%Y-%m-%d %H:%M:%S");
             break;
         case 60:
-            res << "minutes since " << std::put_time(std::localtime(&time), "%Y-%m-%d %H:%M");
+            res << "minutes since " << std::put_time(std::gmtime(&time), "%Y-%m-%d %H:%M");
             break;
         case 60 * 60:
-            res << "hours since " << std::put_time(std::localtime(&time), "%Y-%m-%d %H:00");
+            res << "hours since " << std::put_time(std::gmtime(&time), "%Y-%m-%d %H:00");
             break;
         case 24 * 60 * 60:
-            res << "days since " << std::put_time(std::localtime(&time), "%Y-%m-%d");
+            res << "days since " << std::put_time(std::gmtime(&time), "%Y-%m-%d");
             break;
         default:
             throw std::runtime_error("Invalid accuracy of " + std::to_string(accuracy));
