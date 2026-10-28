@@ -26,9 +26,10 @@
 #include <unordered_map>
 #include "Output.h"
 #include "helpers.h"
+#include "impacts/WbgtLabourProductivity.h"
 #include "impacts/Flooding.h"
-#include "impacts/HeatLaborProductivity.h"
-#include "impacts/HeatedProductivity.h"
+#include "impacts/TemperatureLabourProductivity.h"
+#include "impacts/PrecomputedLabourProductivity.h"
 #include "impacts/TropicalCyclones.h"
 #include "progressbar.h"
 #include "settingsnode.h"
@@ -56,6 +57,10 @@ static void run(const settings::SettingsNode& settings) {
         const auto& type = impact_node["type"].as<settings::hstring>();
 
         switch (type) {
+            case settings::hstring::hash("wbgt_labour_productivity"):
+                impact = std::make_unique<impactgen::WbgtLabourProductivity>(impact_node, output.prepare_forcing());
+                impact_name = "WBGT Labour Productivity";
+                break;
             // TODO event_series
             // TODO passage shocks
             // TODO shock
@@ -68,12 +73,14 @@ static void run(const settings::SettingsNode& settings) {
                 impact_name = "Tropical Cyclones";
                 break;
             case settings::hstring::hash("heat_labor_productivity"):
-                impact = std::make_unique<impactgen::HeatLaborProductivity>(impact_node, output.prepare_forcing());
-                impact_name = "Heat Labor Productivity";
+            case settings::hstring::hash("temperature_labour_productivity"):
+                impact = std::make_unique<impactgen::TemperatureLabourProductivity>(impact_node, output.prepare_forcing());
+                impact_name = "Temperature Labour Productivity";
                 break;
             case settings::hstring::hash("heated_productivity"):
-                impact = std::make_unique<impactgen::HeatedProductivity>(impact_node, output.prepare_forcing());
-                impact_name = "Heated Productivity";
+            case settings::hstring::hash("precomputed_labour_productivity"):
+                impact = std::make_unique<impactgen::PrecomputedLabourProductivity>(impact_node, output.prepare_forcing());
+                impact_name = "Precomputed Labour Productivity";
                 break;
             default:
                 throw std::runtime_error("Unsupported impact type '" + std::string(type) + "'");

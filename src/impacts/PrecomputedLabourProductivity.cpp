@@ -18,7 +18,7 @@
   <http://www.gnu.org/licenses/>.
 */
 
-#include "impacts/HeatedProductivity.h"
+#include "impacts/PrecomputedLabourProductivity.h"
 #include <algorithm>
 #include <cmath>
 #include <iostream>
@@ -34,10 +34,11 @@
 
 namespace impactgen {
 
-HeatedProductivity::HeatedProductivity(const settings::SettingsNode& impact_node, AgentForcing base_forcing_p)
+PrecomputedLabourProductivity::PrecomputedLabourProductivity(const settings::SettingsNode& impact_node, AgentForcing base_forcing_p)
     : AgentImpact(std::move(base_forcing_p)), ProxiedImpact(impact_node["proxy"]), Impact(impact_node) {
-    forcing_filename = impact_node["heated_productivity"]["file"].as<std::string>();
-    forcing_varname = impact_node["heated_productivity"]["variable"].as<std::string>();
+    const auto source = impact_node[impact_node.has("precomputed_labour_productivity") ? "precomputed_labour_productivity" : "heated_productivity"];
+    forcing_filename = source["file"].as<std::string>();
+    forcing_varname = source["variable"].as<std::string>();
     const auto& all_sectors = base_forcing.get_sectors();
     
     
@@ -54,7 +55,7 @@ HeatedProductivity::HeatedProductivity(const settings::SettingsNode& impact_node
 
 
 
-//~ void HeatedProductivity::join(Output& output, const TemplateFunction& template_func) {
+//~ void PrecomputedLabourProductivity::join(Output& output, const TemplateFunction& template_func) {
     //~ auto filename = fill_template(forcing_filename, template_func);
     //~ netCDF::NcFile forcing_file;
     //~ try {
@@ -138,7 +139,7 @@ HeatedProductivity::HeatedProductivity(const settings::SettingsNode& impact_node
     //~ output.include_forcing(forcing_series);
     //~ time_bar.close(true);
 //~ }
-void HeatedProductivity::join(Output& output, const TemplateFunction& template_func) {
+void PrecomputedLabourProductivity::join(Output& output, const TemplateFunction& template_func) {
     auto filename = fill_template(forcing_filename, template_func);
     netCDF::NcFile forcing_file;
 

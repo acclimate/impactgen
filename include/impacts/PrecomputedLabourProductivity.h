@@ -19,8 +19,8 @@
   <http://www.gnu.org/licenses/>.
 */
 
-#ifndef IMPACTGEN_HEATLABORPRODUCTIVITY_H
-#define IMPACTGEN_HEATLABORPRODUCTIVITY_H
+#ifndef IMPACTGEN_PRECOMPUTEDLABOURPRODUCTIVITY_H
+#define IMPACTGEN_PRECOMPUTEDLABOURPRODUCTIVITY_H
 
 #include <string>
 #include "GeoGrid.h"
@@ -33,15 +33,18 @@ namespace impactgen {
 
 class Output;
 
-class HeatLaborProductivity : public AgentImpact, public ProxiedImpact, public Impact {
+
+
+class PrecomputedLabourProductivity : public AgentImpact, public ProxiedImpact, public Impact {
   protected:
+    nvector::Vector<ForcingType, 2> last;
+    GeoGrid<float> last_grid;
     std::string forcing_filename;
     std::string forcing_varname;
-    std::vector<ForcingType> alphas;
-    ForcingType threshold;
+    std::vector<std::vector<int>> categories;
 
   public:
-    HeatLaborProductivity(const settings::SettingsNode& impact_node, AgentForcing base_forcing_p);
+    PrecomputedLabourProductivity(const settings::SettingsNode& impact_node, AgentForcing base_forcing_p);
     void join(Output& output, const TemplateFunction& template_func) override;
 };
 }  // namespace impactgen

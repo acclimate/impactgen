@@ -18,7 +18,7 @@
   <http://www.gnu.org/licenses/>.
 */
 
-#include "impacts/HeatLaborProductivity.h"
+#include "impacts/TemperatureLabourProductivity.h"
 #include <algorithm>
 #include <cmath>
 #include <iostream>
@@ -34,7 +34,7 @@
 
 namespace impactgen {
 
-HeatLaborProductivity::HeatLaborProductivity(const settings::SettingsNode& impact_node, AgentForcing base_forcing_p)
+TemperatureLabourProductivity::TemperatureLabourProductivity(const settings::SettingsNode& impact_node, AgentForcing base_forcing_p)
     : AgentImpact(std::move(base_forcing_p)), ProxiedImpact(impact_node["proxy"]), Impact(impact_node) {
     forcing_filename = impact_node["day_temperature"]["file"].as<std::string>();
     forcing_varname = impact_node["day_temperature"]["variable"].as<std::string>();
@@ -47,7 +47,7 @@ HeatLaborProductivity::HeatLaborProductivity(const settings::SettingsNode& impac
     read_isoraster(impact_node["isoraster"], base_forcing.get_regions());
 }
 
-void HeatLaborProductivity::join(Output& output, const TemplateFunction& template_func) {
+void TemperatureLabourProductivity::join(Output& output, const TemplateFunction& template_func) {
     auto filename = fill_template(forcing_filename, template_func);
     netCDF::NcFile forcing_file;
     try {
